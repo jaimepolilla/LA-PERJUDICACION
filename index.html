@@ -406,7 +406,10 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 
 <div id="p-ropa" class="panel">
   <div class="card">
-    <div class="stitle">Tallas de la peña</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="stitle" style="margin-bottom:0">Tallas de la peña</div>
+      <button onclick="abrirAnadirExterno()" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;font-size:22px;border:none;cursor:pointer;box-shadow:0 3px 10px rgba(232,81,10,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1">+</button>
+    </div>
     <div id="ropa-lista"><div class="empty">Cargando...</div></div>
   </div>
   <div style="display:flex;gap:10px;margin-top:0">
@@ -1518,8 +1521,7 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 
 
 
-<!-- FAB añadir persona externa -->
-<button id="fab-ropa" onclick="abrirAnadirExterno()" style="display:none;position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;font-size:26px;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(232,81,10,.45);z-index:100;align-items:center;justify-content:center;transition:transform .15s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">+</button>
+
 
 <!-- Modal añadir persona externa -->
 <div id="externo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px">
