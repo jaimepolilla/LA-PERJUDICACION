@@ -1269,10 +1269,14 @@ function setPedidoQty(nombre, prenda, qty){
 // Event delegation for pedido checkboxes and qty inputs
 document.addEventListener('change', function(e){
   if(e.target.classList.contains('pedido-cb')){
-    togglePedidoItem(e.target.dataset.nombre, e.target.dataset.prenda, e.target.checked);
+    var n = e.target.dataset.nombre;
+    if(!canEditPedido(n)){e.preventDefault();e.target.checked=!e.target.checked;return;}
+    togglePedidoItem(n, e.target.dataset.prenda, e.target.checked);
   }
   if(e.target.classList.contains('pedido-qty')){
-    setPedidoQty(e.target.dataset.nombre, e.target.dataset.prenda, e.target.value);
+    var n2 = e.target.dataset.nombre;
+    if(!canEditPedido(n2)){e.target.value=pedidoData[n2]&&pedidoData[n2][e.target.dataset.prenda]?pedidoData[n2][e.target.dataset.prenda].qty:1;return;}
+    setPedidoQty(n2, e.target.dataset.prenda, e.target.value);
   }
 });
 
