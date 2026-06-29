@@ -671,7 +671,7 @@ function _finalizarLogin(n){
   currentUser=n;
   localStorage.setItem('usuario',n);
   const tallasGrid=document.getElementById('login-tallas-grid');
-  if(tallasGrid && tallasGrid.style.display!=='none'){
+  if(!isAdmin && tallasGrid && tallasGrid.style.display!=='none'){
     const tallas={
       camiseta:document.getElementById('login-camiseta').value,
       sudadera:document.getElementById('login-sudadera').value,
@@ -682,6 +682,8 @@ function _finalizarLogin(n){
     localStorage.setItem('tallas',JSON.stringify(tallas));
     saveTallas(n,tallas);
   }
+  // Hide tallas grid for admin
+  if(isAdmin && tallasGrid) tallasGrid.style.display='none';
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('user-chip').style.display='flex';
   document.getElementById('user-chip-name').textContent=n.charAt(0).toUpperCase();
@@ -708,6 +710,8 @@ function cerrarSesion(){
   if(!confirm('¿Cerrar sesión?'))return;
   localStorage.removeItem('usuario');
   localStorage.removeItem('tallas');
+  localStorage.removeItem('isAdmin');
+  isAdmin=false;
   currentUser=null;
   cerrarPerfil();
   const chip=document.getElementById('user-chip');
@@ -728,6 +732,7 @@ function checkExistingUser(nombre){
   const sub=document.getElementById('login-sub-text');
   if(!grid)return;
   if(!n){grid.style.display='grid';sub.textContent='¿Cómo te llamas?';return;}
+  if(n.toLowerCase()==='admin'){grid.style.display='none';sub.textContent='Acceso de administrador 🔐';return;}
   if(db&&tallasData[n]){
     grid.style.display='none';
     sub.textContent='¡Bienvenido de nuevo, '+n+'!';
@@ -764,8 +769,13 @@ function addParticipante(){
       return;
     }
   }
+  // Admin cannot add themselves as participant
+  if(isAdmin && tipo==='socio' && n.toLowerCase()==='admin'){
+    alert('⚠️ El administrador no puede añadirse como participante.');
+    return;
+  }
   // Only current user can add themselves as socio
-  if(tipo==='socio' && currentUser && n.toLowerCase()!==currentUser.toLowerCase()){
+  if(!isAdmin && tipo==='socio' && currentUser && n.toLowerCase()!==currentUser.toLowerCase()){
     alert('⚠️ Solo puedes darte de alta a ti mismo como socio. Para añadir a otra persona selecciona tipo Invitado.');
     return;
   }
@@ -1147,7 +1157,7 @@ function eliminarTicket(){
 function renderRopa(){
   const el=document.getElementById('ropa-lista');
   if(!el)return;
-  const socios=Object.entries(tallasData);
+  const socios=Object.entries(tallasData).filter(function(e){return e[0].toLowerCase()!=='admin';});
   if(!socios.length){el.innerHTML='<div class="empty">Aún no hay tallas registradas</div>';return;}
   const prendas=['camiseta','sudadera','peto','cazadora','polo'];
   const icons={camiseta:'👕',sudadera:'🧥',peto:'👖',cazadora:'🧣',polo:'👔'};
@@ -1172,7 +1182,7 @@ function eliminarExterno(nombre){
 }
 
 function exportarRopaExcel(){
-  const socios=Object.entries(tallasData);
+  const socios=Object.entries(tallasData).filter(function(e){return e[0].toLowerCase()!=='admin';});
   if(!socios.length){alert('No hay tallas registradas todavía.');return;}
   const headers=['Nombre','Camiseta','Sudadera','Peto','Cazadora','Polo'];
   const rows=socios.map(([nombre,t])=>[nombre,t.camiseta||'-',t.sudadera||'-',t.peto||'-',t.cazadora||'-',t.polo||'-']);
@@ -1297,7 +1307,7 @@ function subirFotoPerfil(event){
       ctx.drawImage(img2,sx,sy,min,min,0,0,size,size);
       const b64=canvas.toDataURL('image/jpeg',0.7);
       localStorage.setItem('fotoPerfil_'+(currentUser||''),b64);
-      if(currentUser)savePhoto(currentUser,b64);
+      if(currentUser&&!isAdmin)savePhoto(currentUser,b64);
       _mostrarFotoEnPerfil(b64);actualizarChipFoto(b64);
     };
     img2.src=e.target.result;
@@ -1337,7 +1347,7 @@ function cerrarPedido(){
 
 function renderPedido(){
   var el = document.getElementById('pedido-lista');
-  var socios = Object.entries(tallasData).filter(function(e){return !e[1].externo;});
+  var socios = Object.entries(tallasData).filter(function(e){return !e[1].externo && e[0].toLowerCase()!=='admin';});
   if(!socios.length){el.innerHTML='<div class="empty">No hay socios con tallas registradas</div>';return;}
   var prendas = ['camiseta','sudadera','peto','cazadora','polo'];
   var icons   = {camiseta:'Camiseta',sudadera:'Sudadera',peto:'Peto',cazadora:'Cazadora',polo:'Polo'};
