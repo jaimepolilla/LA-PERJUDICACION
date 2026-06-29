@@ -461,6 +461,13 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
     </div>
   </div>
 
+  <!-- Admin access -->
+  <div style="margin-top:8px">
+    <button onclick="accederAdmin()" class="btn" style="width:100%;padding:12px;font-size:14px;font-weight:600;color:var(--muted);border-color:var(--borde);display:flex;align-items:center;justify-content:center;gap:8px">
+      🔐 Acceso administrador
+    </button>
+  </div>
+
   <!-- Spotify -->
   <div id="ext-spotify" style="display:none">
     <div class="card" style="text-align:center">
@@ -558,6 +565,23 @@ function loadSpotifyQR(){
       if(container) container.innerHTML = img;
     }
   });
+}
+
+
+function accederAdmin(){
+  if(isAdmin){
+    alert('✅ Ya estás conectado como administrador.');
+    return;
+  }
+  const pwd=prompt('🔐 Contraseña de administrador:');
+  if(pwd===null)return;
+  if(pwd!=='2011'){alert('⚠️ Contraseña incorrecta.');return;}
+  isAdmin=true;
+  localStorage.setItem('isAdmin','true');
+  // Show admin controls
+  const adminWrap=document.getElementById('admin-precio-dia-wrap');
+  if(adminWrap) adminWrap.style.display='flex';
+  alert('✅ Modo administrador activado.');
 }
 
 function copyIban(){
@@ -1172,7 +1196,23 @@ function renderRopa(){
         </div>
       </div>
       ${t.externo&&canDelete(t.addedBy)?`<button class="btn btn-sm btn-d" onclick="eliminarExterno('${nombre}')">✕</button>`:''}
+      ${isAdmin&&!t.externo?`<button class="btn btn-sm btn-d" onclick="adminEliminarUsuario('${nombre}')">✕</button>`:''}
     </div>`).join('');
+}
+
+
+function adminEliminarUsuario(nombre){
+  if(!isAdmin)return;
+  if(!confirm('¿Eliminar el usuario "'+nombre+'" de la aplicación? Se borrarán sus tallas.'))return;
+  delete tallasData[nombre];
+  if(db){
+    db.collection('perjudicacion').doc('tallas').get().then(doc=>{
+      const data=doc.exists?doc.data():{};
+      delete data[nombre];
+      db.collection('perjudicacion').doc('tallas').set(data);
+    });
+  }
+  renderRopa();
 }
 
 function eliminarExterno(nombre){
