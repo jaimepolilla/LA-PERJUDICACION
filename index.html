@@ -42,13 +42,13 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 }
 .logo-pill{background:#fff;border-radius:12px;padding:6px 14px;display:flex;align-items:center;box-shadow:var(--shadow-sm);}
 .logo-pill img{height:34px;display:block;}
-.user-chip{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--ora);font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;position:absolute;right:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;border:2px solid rgba(255,255,255,.6);transition:transform .15s;}
+.user-chip{width:40px;height:40px;border-radius:50%;background:#fff;color:var(--ora);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;position:absolute;right:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;border:2px solid rgba(255,255,255,.6);transition:transform .15s;-webkit-tap-highlight-color:transparent;}
 .user-chip:hover{transform:scale(1.1);}
 
 /* NAV */
 .nav{background:#fff;display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--borde);box-shadow:var(--shadow-sm);}
 .nav::-webkit-scrollbar{display:none;}
-.nav-btn{padding:13px 14px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .18s;letter-spacing:.01em;}
+.nav-btn{padding:14px 14px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .18s;letter-spacing:.01em;min-height:48px;-webkit-tap-highlight-color:transparent;}
 .nav-btn.active{color:var(--ora);border-bottom-color:var(--ora);}
 .nav-btn:hover{color:var(--ora);}
 
@@ -68,20 +68,23 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 .fg{flex:1;min-width:110px;}
 .fg label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;letter-spacing:.03em;}
 .fg input,.fg select{
-  width:100%;padding:10px 12px;
+  width:100%;padding:12px 14px;
   border:1.5px solid var(--borde);
-  border-radius:var(--rs);font-size:14px;
+  border-radius:var(--rs);font-size:15px;
   background:#fff;color:var(--texto);outline:none;
   transition:border-color .15s,box-shadow .15s;
+  min-height:46px;
 }
 .fg input:focus,.fg select:focus{border-color:var(--ora);box-shadow:0 0 0 3px rgba(232,81,10,.12);}
 
 /* BUTTONS */
-.btn{padding:9px 16px;font-size:13px;font-weight:600;border:1.5px solid var(--borde);border-radius:var(--rs);background:#fff;color:var(--texto);cursor:pointer;transition:all .15s;}
+.btn{padding:11px 18px;font-size:14px;font-weight:600;border:1.5px solid var(--borde);border-radius:var(--rs);background:#fff;color:var(--texto);cursor:pointer;transition:all .15s;min-height:44px;display:inline-flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
 .btn:hover{background:var(--gris);border-color:#ccc;}
+.btn:active{transform:scale(.97);}
 .btn-p{background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;box-shadow:0 4px 12px rgba(232,81,10,.3);}
 .btn-p:hover{background:linear-gradient(135deg,#C8420A,#E8510A);box-shadow:0 6px 16px rgba(232,81,10,.4);transform:translateY(-1px);}
-.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-p:active{transform:scale(.97);}
+.btn-sm{padding:8px 14px;font-size:13px;min-height:36px;}
 .btn-d{border-color:#FFD0D0;color:var(--mal);background:#FFF5F5;}
 .btn-d:hover{background:var(--mal-bg);}
 
@@ -111,11 +114,11 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 
 /* PILLS (listas) */
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px;}
-.pill{padding:6px 14px;font-size:12px;font-weight:600;border:1.5px solid var(--ora-m);border-radius:20px;background:#fff;cursor:pointer;color:var(--ora-dd);transition:all .15s;}
+.pill{padding:9px 16px;font-size:13px;font-weight:600;border:1.5px solid var(--ora-m);border-radius:20px;background:#fff;cursor:pointer;color:var(--ora-dd);transition:all .15s;min-height:40px;display:inline-flex;align-items:center;-webkit-tap-highlight-color:transparent;}
 .pill.active{background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(232,81,10,.3);}
 
 /* CHECKLIST */
-.ci{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--borde);}
+.ci{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--borde);}
 .ci:last-child{border-bottom:none;}
 .ci input[type=checkbox]{width:17px;height:17px;accent-color:var(--ora);flex-shrink:0;cursor:pointer;}
 .ci.done .cin{text-decoration:line-through;color:#ccc;}
@@ -163,9 +166,9 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
   <div class="login-box">
     <img class="login-logo" id="login-logo" alt="La Perjudicación">
     <div class="login-title">¡Bienvenido a La Perjudicación!</div>
-    <div class="login-sub">Rellena tus datos para entrar</div>
-    <input class="login-input" type="text" id="login-nombre" placeholder="Tu nombre" maxlength="30">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;text-align:left">
+    <div class="login-sub" id="login-sub-text">¿Cómo te llamas?</div>
+    <input class="login-input" type="text" id="login-nombre" placeholder="Tu nombre" maxlength="30" oninput="checkExistingUser(this.value)">
+    <div id="login-tallas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;text-align:left">
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">CAMISETA</div>
         <select id="login-camiseta" class="login-input" style="margin-bottom:0;padding:10px 12px">
@@ -479,7 +482,7 @@ function renderParticipantes(){
         <div class="av">${ini(p.nombre)}</div>
         <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--muted)">${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div></div>
         <div class="ml">
-          <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'}">
+          <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'};min-width:110px;">
             ${p.pagado==='si'?'✅ Pagado':'❌ Pendiente'}
           </button>
           ${canDelete(p.createdBy)?`<button class="btn btn-sm btn-d" onclick="delParticipante(${p.id})">✕</button>`:''}
@@ -824,20 +827,54 @@ let currentUser = null;
 function doLogin() {
   const n = document.getElementById('login-nombre').value.trim();
   if (!n) { document.getElementById('login-nombre').focus(); return; }
-  const tallas = {
-    camiseta: document.getElementById('login-camiseta').value,
-    sudadera: document.getElementById('login-sudadera').value,
-    peto:     document.getElementById('login-peto').value,
-    cazadora: document.getElementById('login-cazadora').value
-  };
   currentUser = n;
   localStorage.setItem('usuario', n);
-  localStorage.setItem('tallas', JSON.stringify(tallas));
-  // Save to Firebase shared tallas collection
-  saveTallas(n, tallas);
+  // Only save tallas if the fields are visible (first time for this user)
+  const tallasGrid = document.getElementById('login-tallas-grid');
+  if (tallasGrid && tallasGrid.style.display !== 'none') {
+    const tallas = {
+      camiseta: document.getElementById('login-camiseta').value,
+      sudadera: document.getElementById('login-sudadera').value,
+      peto:     document.getElementById('login-peto').value,
+      cazadora: document.getElementById('login-cazadora').value
+    };
+    localStorage.setItem('tallas', JSON.stringify(tallas));
+    saveTallas(n, tallas);
+  }
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('user-chip').style.display = 'flex';
   document.getElementById('user-chip-name').textContent = n.charAt(0).toUpperCase();
+}
+
+
+function checkExistingUser(nombre) {
+  const n = nombre.trim();
+  const grid = document.getElementById('login-tallas-grid');
+  const sub  = document.getElementById('login-sub-text');
+  if (!grid) return;
+  if (!n) {
+    grid.style.display = 'grid';
+    sub.textContent = 'Rellena tus datos para entrar';
+    return;
+  }
+  // Check Firebase if user already has tallas
+  if (db && tallasData[n]) {
+    grid.style.display = 'none';
+    sub.textContent = '¡Bienvenido de nuevo, ' + n + '!';
+  } else if (db) {
+    db.collection('perjudicacion').doc('tallas').get().then(doc => {
+      const data = doc.exists ? doc.data() : {};
+      if (data[n]) {
+        grid.style.display = 'none';
+        sub.textContent = '¡Bienvenido de nuevo, ' + n + '!';
+        // Pre-load tallas into local storage
+        localStorage.setItem('tallas', JSON.stringify(data[n]));
+      } else {
+        grid.style.display = 'grid';
+        sub.textContent = 'Primera vez. Añade tus tallas (opcional)';
+      }
+    });
+  }
 }
 
 function saveTallas(nombre, tallas) {
