@@ -156,7 +156,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
     <img id="logoimg" alt="La Perjudicación">
   </div>
   <div style="position:absolute;right:12px;display:flex;align-items:center;gap:8px;">
-<div id="sync-status" style="font-size:11px;color:rgba(255,255,255,.85);transition:opacity 1s;opacity:0"></div>
+<div id="sync-status" style="display:none" style="font-size:11px;color:rgba(255,255,255,.85);transition:opacity 1s;opacity:0"></div>
   </div>
 </div>
 
@@ -1001,6 +1001,7 @@ function selLista(id){S.listaActiva=id;renderListas();}
 
 function delLista(id,e){
   e.stopPropagation();
+  if(!isAdmin){alert('⚠️ Solo el administrador puede eliminar listas de compra.');return;}
   if(!confirm('¿Eliminar esta lista de compra?'))return;
   const lst=S.listas.find(l=>l.id===id);
   if(lst&&lst.gastoId)S.gastos=S.gastos.filter(g=>g.id!==lst.gastoId);
@@ -1474,6 +1475,24 @@ document.addEventListener('click',e=>{
 // ── EXPORT ROPA EXCEL ────────────────────────────────────────
 // (included above in renderRopa section)
 
+
+// ── AUTO PURGE PARTICIPANTES ─────────────────────────────────
+function autoPurgeParticipantes(){
+  const now = new Date();
+  const mes = now.getMonth() + 1; // 1-12
+  const eventosPurge = [];
+  if(mes > 5)  eventosPurge.push('San Isidro');
+  if(mes > 8)  eventosPurge.push('San Esteban');
+  if(mes > 10) eventosPurge.push('Octubre');
+  if(!eventosPurge.length) return;
+  const antes = S.participantes.length;
+  S.participantes = S.participantes.filter(p => !eventosPurge.includes(p.evento));
+  // Also remove auto ingresos linked to purged participants
+  const idsRestantes = new Set(S.participantes.map(p=>p.id));
+  S.ingresos = S.ingresos.filter(i => !i.auto || idsRestantes.has(i.id));
+  if(S.participantes.length < antes) saveToFirebase();
+}
+
 // ── FIREBASE SYNC ────────────────────────────────────────────
 const firebaseConfig={apiKey:"AIzaSyBkZcLoNXeQbqljlvg1mOWAxB4MaJ11c_o",authDomain:"la-perjudicacion.firebaseapp.com",projectId:"la-perjudicacion",storageBucket:"la-perjudicacion.firebasestorage.app",messagingSenderId:"108138964249",appId:"1:108138964249:web:c95c434607b0a4ad9b1188"};
 let db=null;let syncTimeout=null;let isRemoteUpdate=false;
@@ -1503,6 +1522,7 @@ function initFirebase(){
             if(id==='ropa'){renderRopa();}
           }
           renderResumen();
+          autoPurgeParticipantes();
           isRemoteUpdate=false;
           showSync('✅ Sincronizado');
         }
@@ -1525,9 +1545,7 @@ function saveToFirebase(){
 }
 
 function showSync(msg){
-  let el=document.getElementById('sync-status');if(!el)return;
-  el.textContent=msg;el.style.opacity='1';
-  setTimeout(()=>{el.style.opacity='0';},2500);
+  // Notifications disabled
 }
 
 const _origFns=['addParticipante','togglePago','delParticipante','addGasto','delGasto','addIngreso','delIngreso','crearLista','delLista','addItem','togItem','delItem','pagarLista','guardarExterno'];
