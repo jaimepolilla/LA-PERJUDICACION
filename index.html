@@ -1193,6 +1193,15 @@ function actualizarChipFoto(src){
 // ── PEDIDO DE ROPA ───────────────────────────────────────────
 let pedidoData = {}; // {nombre: {camiseta:{checked,qty}, sudadera:{...}, ...}}
 
+
+function canEditPedido(nombre){
+  if(!currentUser) return false;
+  if(nombre === currentUser) return true;
+  var t = tallasData[nombre];
+  if(t && t.externo && t.addedBy === currentUser) return true;
+  return false;
+}
+
 function abrirPedido(){
   document.getElementById('pedido-modal').style.display='flex';
   renderPedido();
@@ -1225,18 +1234,18 @@ function renderPedido(){
       var chk = pd.checked ? ' checked' : '';
       var dataAttrs = ' data-nombre="'+nombre+'" data-prenda="'+p+'"';
       prendasHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:'+bg+';border-radius:var(--rs);border:1.5px solid '+brd+'">'
-        +'<input type="checkbox"'+chk+dataAttrs+' class="pedido-cb" style="width:16px;height:16px;accent-color:var(--ora);cursor:pointer;flex-shrink:0">'
+        +(canEditPedido(nombre) ? '<input type="checkbox"'+chk+dataAttrs+' class="pedido-cb" style="width:16px;height:16px;accent-color:var(--ora);cursor:pointer;flex-shrink:0">' : '<input type="checkbox"'+chk+' disabled style="width:16px;height:16px;opacity:0.3;flex-shrink:0">')
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:13px;font-weight:600">'+emojis[p]+' '+icons[p]+'</div>'
         +'<div style="font-size:11px;color:var(--muted)">Talla: '+t[p]+'</div>'
         +'</div>'
-        +'<input type="number" value="'+(pd.qty||1)+'" min="1" max="99"'+dataAttrs+' class="pedido-qty" style="width:46px;padding:4px 6px;border:1.5px solid var(--borde);border-radius:6px;font-size:13px;font-family:inherit;text-align:center;opacity:'+op+'">'
+        +(canEditPedido(nombre) ? '<input type="number" value="'+(pd.qty||1)+'" min="1" max="99"'+dataAttrs+' class="pedido-qty" style="width:46px;padding:4px 6px;border:1.5px solid var(--borde);border-radius:6px;font-size:13px;font-family:inherit;text-align:center;opacity:'+op+'">' : '<span style="width:46px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);flex-shrink:0">'+(pd.qty||1)+'</span>')
         +'</div>';
     }
     out += '<div style="border:1px solid var(--borde);border-radius:var(--r);padding:14px;margin-bottom:10px">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
       +'<div class="av" style="width:34px;height:34px;font-size:13px">'+nombre.charAt(0).toUpperCase()+'</div>'
-      +'<div style="font-size:15px;font-weight:700;color:var(--texto)">'+nombre+'</div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--texto)">'+nombre+'</div>'+(canEditPedido(nombre)?'':'<span style="font-size:11px;color:var(--muted);background:var(--gris);border-radius:20px;padding:2px 8px;margin-left:6px">solo lectura</span>')
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+prendasHtml+'</div>'
       +'</div>';
