@@ -835,6 +835,29 @@ let currentUser = null;
 function doLogin() {
   const n = document.getElementById('login-nombre').value.trim();
   if (!n) { document.getElementById('login-nombre').focus(); return; }
+  // Check for duplicate: if user exists in Firebase and is NOT returning (no local storage match)
+  const knownUser = localStorage.getItem('usuario');
+  if (db && !knownUser) {
+    // New login — check if name is taken by another device
+    db.collection('perjudicacion').doc('usuarios').get().then(doc => {
+      const users = doc.exists ? doc.data() : {};
+      const deviceId = localStorage.getItem('deviceId') || (Math.random().toString(36).slice(2));
+      localStorage.setItem('deviceId', deviceId);
+      if (users[n] && users[n] !== deviceId) {
+        alert('⚠️ El nombre "' + n + '" ya está siendo usado por otro dispositivo. Elige otro nombre.');
+        return;
+      }
+      // Register this device for this name
+      users[n] = deviceId;
+      db.collection('perjudicacion').doc('usuarios').set(users);
+      _finalizarLogin(n);
+    });
+    return;
+  }
+  _finalizarLogin(n);
+}
+
+function _finalizarLogin(n) {
   currentUser = n;
   localStorage.setItem('usuario', n);
   // Only save tallas if the fields are visible (first time for this user)
@@ -852,8 +875,19 @@ function doLogin() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('user-chip').style.display = 'flex';
   document.getElementById('user-chip-name').textContent = n.charAt(0).toUpperCase();
-  const savedPhoto = localStorage.getItem('fotoPerfil');
-  if (savedPhoto) actualizarChipFoto(savedPhoto);
+  // Restore photo: check localStorage first, then Firebase
+  const localPhoto = localStorage.getItem('fotoPerfil_' + n);
+  if (localPhoto) {
+    actualizarChipFoto(localPhoto);
+  } else if (db) {
+    db.collection('perjudicacion').doc('tallas').get().then(doc => {
+      if (doc.exists && doc.data()[n] && doc.data()[n].foto) {
+        const foto = doc.data()[n].foto;
+        localStorage.setItem('fotoPerfil_' + n, foto);
+        actualizarChipFoto(foto);
+      }
+    });
+  }
 }
 
 
@@ -893,7 +927,22 @@ function saveTallas(nombre, tallas) {
   if (!db) { setTimeout(() => saveTallas(nombre, tallas), 1000); return; }
   db.collection('perjudicacion').doc('tallas').get().then(doc => {
     const data = doc.exists ? doc.data() : {};
+    // Preserve existing photo if not in new tallas
+    if (data[nombre] && data[nombre].foto && !tallas.foto) {
+      tallas.foto = data[nombre].foto;
+    }
     data[nombre] = tallas;
+    db.collection('perjudicacion').doc('tallas').set(data);
+  });
+}
+
+function savePhoto(nombre, b64) {
+  if (!db) { setTimeout(() => savePhoto(nombre, b64), 1000); return; }
+  db.collection('perjudicacion').doc('tallas').get().then(doc => {
+    const data = doc.exists ? doc.data() : {};
+    if (!data[nombre]) data[nombre] = {};
+    data[nombre].foto = b64;
+    tallasData[nombre] = data[nombre];
     db.collection('perjudicacion').doc('tallas').set(data);
   });
 }
@@ -925,7 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('user-chip').style.display = 'flex';
     document.getElementById('user-chip-name').textContent = saved.charAt(0).toUpperCase();
-    const savedPhoto = localStorage.getItem('fotoPerfil');
+    const savedPhoto = localStorage.getItem('fotoPerfil_' + (currentUser||''));
     if (savedPhoto) actualizarChipFoto(savedPhoto);
   }
   // Enter key on login
@@ -942,7 +991,7 @@ function cerrarSesion() {
   if (!confirm('¿Cerrar sesión?')) return;
   localStorage.removeItem('usuario');
   localStorage.removeItem('tallas');
-  localStorage.removeItem('fotoPerfil');
+  // Keep fotoPerfil per device - restored on login by name match
   currentUser = null;
   cerrarPerfil();
   document.getElementById('user-chip').style.display = 'none';
@@ -973,7 +1022,9 @@ function subirFotoPerfil(event) {
       const sy = (img.height - min) / 2;
       ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
       const b64 = canvas.toDataURL('image/jpeg', 0.7);
-      localStorage.setItem('fotoPerfil', b64);
+      localStorage.setItem('fotoPerfil_' + (currentUser||''), b64);
+      // Save to Firebase
+      if (currentUser) savePhoto(currentUser, b64);
       // Show in modal
       document.getElementById('perfil-avatar-img').src = b64;
       document.getElementById('perfil-avatar-img').style.display = 'block';
@@ -1164,7 +1215,7 @@ function abrirPerfil() {
   document.getElementById('perfil-nombre-display').textContent = currentUser;
   document.getElementById('perfil-avatar-inicial').textContent = currentUser.charAt(0).toUpperCase();
   // Show saved photo
-  const savedPhoto = localStorage.getItem('fotoPerfil');
+  const savedPhoto = localStorage.getItem('fotoPerfil_' + (currentUser||''));
   if (savedPhoto) {
     document.getElementById('perfil-avatar-img').src = savedPhoto;
     document.getElementById('perfil-avatar-img').style.display = 'block';
