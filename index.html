@@ -228,6 +228,12 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
     <div class="stitle">Pago de fiestas</div>
     <div class="form-row">
       <div class="fg"><label>Nombre</label><input type="text" id="p-nom" placeholder="Ej: Paco García"></div>
+      <div class="fg"><label>Tipo</label>
+        <select id="p-tipo">
+          <option value="socio">👤 Socio</option>
+          <option value="invitado">🎟 Invitado</option>
+        </select>
+      </div>
       <div class="fg"><label>Días</label><input type="number" id="p-dias" placeholder="0" min="0" step="1" oninput="document.getElementById('p-cantidad').value=(parseFloat(this.value)||0)*20"></div>
     </div>
     <div class="form-row">
@@ -722,13 +728,27 @@ function checkExistingUser(nombre){
 function addParticipante(){
   S._ts=Date.now();
   const n=document.getElementById('p-nom').value.trim();
+  const tipo=document.getElementById('p-tipo').value;
   const dias=parseInt(document.getElementById('p-dias').value)||0;
   const c=parseFloat(document.getElementById('p-cantidad').value)||0;
   const e=document.getElementById('p-evento').value;
   const pag=document.getElementById('p-pagado').value;
   if(!n)return;
+  // Socio: cannot register same name twice in same fiesta
+  if(tipo==='socio'){
+    const yaExiste=S.participantes.some(p=>p.nombre.toLowerCase()===n.toLowerCase()&&p.evento===e&&p.tipo!=='invitado');
+    if(yaExiste){
+      alert('⚠️ "'+n+'" ya está dado de alta en "'+e+'". Para añadir un acompañante selecciona tipo Invitado.');
+      return;
+    }
+  }
+  // Only current user can add themselves as socio
+  if(tipo==='socio' && currentUser && n.toLowerCase()!==currentUser.toLowerCase()){
+    alert('⚠️ Solo puedes darte de alta a ti mismo como socio. Para añadir a otra persona selecciona tipo Invitado.');
+    return;
+  }
   const id=Date.now();
-  S.participantes.push({id,nombre:n,dias,cantidad:c,evento:e,pagado:'no',createdBy:currentUser});
+  S.participantes.push({id,nombre:n,tipo,dias,cantidad:c,evento:e,pagado:'no',createdBy:currentUser});
   if(pag==='si'){
     S.participantes[S.participantes.length-1].pagado='si';
     S.ingresos.push({id,auto:true,concepto:n+(e?' — '+e:''),importe:c,origenId:null,tipo:'cuota',fecha:hoy()});
@@ -737,6 +757,7 @@ function addParticipante(){
   document.getElementById('p-dias').value='';
   document.getElementById('p-cantidad').value='';
   document.getElementById('p-pagado').value='no';
+  document.getElementById('p-tipo').value='socio';
   renderParticipantes();renderIngresos();updSelects();
 }
 
@@ -775,12 +796,12 @@ function renderParticipantes(){
       <div style="font-size:11px;font-weight:600;color:var(--ora-dd);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid var(--ora-m);margin-bottom:2px">${ev}</div>
       ${parts.map(p=>`<div class="li">
         <div class="av">${ini(p.nombre)}</div>
-        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--muted)">${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div></div>
+        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--muted)">${p.tipo==='invitado'?'🎟 Invitado · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div></div>
         <div class="ml">
           <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'};min-width:110px;">
             ${p.pagado==='si'?'✅ Pagado':'❌ Pendiente'}
           </button>
-          ${canDelete(p.createdBy)?`<button class="btn btn-sm btn-d" onclick="delParticipante(${p.id})">✕</button>`:''}
+          ${(p.tipo==='invitado' ? (currentUser && p.createdBy && p.createdBy.toLowerCase()===currentUser.toLowerCase()) : canDelete(p.createdBy))?`<button class="btn btn-sm btn-d" onclick="delParticipante(${p.id})">✕</button>`:''}
         </div>
       </div>`).join('')}
     </div>
