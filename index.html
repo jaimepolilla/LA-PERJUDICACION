@@ -851,7 +851,7 @@ function renderParticipantes(){
     <div style="margin-bottom:4px">
       <div style="font-size:11px;font-weight:600;color:var(--ora-dd);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid var(--ora-m);margin-bottom:2px">${ev}</div>
       ${parts.map(p=>`<div class="li">
-        <div class="av">${ini(p.nombre)}</div>
+        ${(()=>{const t=tallasData[p.nombre];const foto=t&&t.foto?t.foto:localStorage.getItem('fotoPerfil_'+p.nombre);return foto?`<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(p.nombre)}</span></div>`:`<div class="av">${ini(p.nombre)}</div>`;})()}
         <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--muted)">${p.tipo==='invitado'?'🎟 Invitado · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div></div>
         <div class="ml">
           <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'};min-width:110px;">
@@ -991,7 +991,7 @@ function renderResumen(){
       else if(balance>0)badge=`<span class="badge b-ok">A favor ${fmt(balance)}</span>`;
       else badge=`<span class="badge b-mal">Adelantó ${fmt(-balance)}</span>`;
       return `<div class="li">
-        <div class="av">${ini(p.nombre)}</div>
+        ${(()=>{const t=tallasData[p.nombre];const foto=t&&t.foto?t.foto:localStorage.getItem('fotoPerfil_'+p.nombre);return foto?`<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(p.nombre)}</span></div>`:`<div class="av">${ini(p.nombre)}</div>`;})()}
         <div><div style="font-size:14px;font-weight:600">${p.nombre}</div>
         <div style="font-size:12px;color:var(--muted)">Aportado: ${fmt(aportado)} · Adelantado: ${fmt(adelantado)}</div></div>
         <div class="ml">${badge}</div>
@@ -1188,7 +1188,10 @@ function renderRopa(){
   const icons={camiseta:'👕',sudadera:'🧥',peto:'👖',cazadora:'🧣',polo:'👔'};
   el.innerHTML=socios.map(([nombre,t])=>`
     <div class="li">
-      <div class="av" style="${t.externo?'background:linear-gradient(135deg,#666,#999)':''}">${nombre.charAt(0).toUpperCase()}</div>
+      ${t.foto ? 
+        `<div class="av" style="background-image:url(${t.foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${nombre.charAt(0).toUpperCase()}</span></div>` :
+        `<div class="av" style="${t.externo?'background:linear-gradient(135deg,#666,#999)':''}">${nombre.charAt(0).toUpperCase()}</div>`
+      }
       <div style="flex:1">
         <div style="font-size:14px;font-weight:600;margin-bottom:6px">${nombre}${t.externo?` <span class="badge b-gray" style="font-size:10px">externo</span>`:''}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
