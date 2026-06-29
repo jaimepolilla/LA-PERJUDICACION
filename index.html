@@ -835,25 +835,6 @@ let currentUser = null;
 function doLogin() {
   const n = document.getElementById('login-nombre').value.trim();
   if (!n) { document.getElementById('login-nombre').focus(); return; }
-  // Check for duplicate: if user exists in Firebase and is NOT returning (no local storage match)
-  const knownUser = localStorage.getItem('usuario');
-  if (db && !knownUser) {
-    // New login — check if name is taken by another device
-    db.collection('perjudicacion').doc('usuarios').get().then(doc => {
-      const users = doc.exists ? doc.data() : {};
-      const deviceId = localStorage.getItem('deviceId') || (Math.random().toString(36).slice(2));
-      localStorage.setItem('deviceId', deviceId);
-      if (users[n] && users[n] !== deviceId) {
-        alert('⚠️ El nombre "' + n + '" ya está siendo usado por otro dispositivo. Elige otro nombre.');
-        return;
-      }
-      // Register this device for this name
-      users[n] = deviceId;
-      db.collection('perjudicacion').doc('usuarios').set(users);
-      _finalizarLogin(n);
-    });
-    return;
-  }
   _finalizarLogin(n);
 }
 
