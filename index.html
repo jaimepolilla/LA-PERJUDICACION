@@ -210,7 +210,6 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
   <button class="nav-btn active" onclick="tab('participantes',this)">👥 Participantes</button>
   <button class="nav-btn" onclick="tab('balance',this)">⚖️ Balance</button>
   <button class="nav-btn" onclick="tab('compras',this)">🛒 Compras</button>
-  <button class="nav-btn" onclick="tab('resumen',this)">📊 Resumen</button>
   <button class="nav-btn" onclick="tab('ropa',this)">👕 Ropa</button>
   <button class="nav-btn" onclick="tab('iban',this)">🏦 IBAN</button>
 </nav>
@@ -254,8 +253,9 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 <div id="p-balance" class="panel">
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;background:#fff;border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-    <button id="bal-tab-gastos" onclick="balTab('gastos')" style="flex:1;padding:11px;font-size:14px;font-weight:600;border:none;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;cursor:pointer;font-family:inherit;">💶 Gastos</button>
-    <button id="bal-tab-ingresos" onclick="balTab('ingresos')" style="flex:1;padding:11px;font-size:14px;font-weight:600;border:none;background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);">🐖 Ingresos</button>
+    <button id="bal-tab-gastos" onclick="balTab('gastos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;">💶 Gastos</button>
+    <button id="bal-tab-ingresos" onclick="balTab('ingresos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">🐖 Ingresos</button>
+    <button id="bal-tab-resumen" onclick="balTab('resumen')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">📊 Resumen</button>
   </div>
 
   <!-- Gastos content -->
@@ -372,10 +372,9 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       </div>
     </div>
   </div>
-</div>
 
-<!-- RESUMEN -->
-<div id="p-resumen" class="panel">
+  <!-- Resumen content -->
+  <div id="bal-resumen" style="display:none">
   <div class="sg">
     <div class="st"><div class="sn" id="r-socios">0</div><div class="sl">Participantes</div></div>
     <div class="st"><div class="sn" id="r-ing" style="color:var(--ok)">0 €</div><div class="sl">Ingresos</div></div>
@@ -727,6 +726,10 @@ function renderResumen(){
 }
 </script>
 
+
+  </div>
+</div>
+
 <!-- ROPA -->
 <div id="p-ropa" class="panel">
   <div class="card">
@@ -810,15 +813,20 @@ function renderResumen(){
 function balTab(t) {
   document.getElementById('bal-gastos').style.display   = t==='gastos'   ? 'block' : 'none';
   document.getElementById('bal-ingresos').style.display = t==='ingresos' ? 'block' : 'none';
-  const btnG = document.getElementById('bal-tab-gastos');
-  const btnI = document.getElementById('bal-tab-ingresos');
-  if(t==='gastos'){
-    btnG.style.background='linear-gradient(135deg,#E8510A,#FF7A3D)';btnG.style.color='#fff';
-    btnI.style.background='#fff';btnI.style.color='var(--muted)';
-  } else {
-    btnI.style.background='linear-gradient(135deg,#E8510A,#FF7A3D)';btnI.style.color='#fff';
-    btnG.style.background='#fff';btnG.style.color='var(--muted)';
-  }
+  document.getElementById('bal-resumen').style.display  = t==='resumen'  ? 'block' : 'none';
+  const btns = ['gastos','ingresos','resumen'];
+  btns.forEach(b => {
+    const el = document.getElementById('bal-tab-'+b);
+    if (!el) return;
+    if (b===t) {
+      el.style.background='linear-gradient(135deg,#E8510A,#FF7A3D)';
+      el.style.color='#fff';
+    } else {
+      el.style.background='#fff';
+      el.style.color='var(--muted)';
+    }
+  });
+  if (t==='resumen') renderResumen();
 }
 
 // ── LOGIN ────────────────────────────────────────────────────
@@ -844,6 +852,8 @@ function doLogin() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('user-chip').style.display = 'flex';
   document.getElementById('user-chip-name').textContent = n.charAt(0).toUpperCase();
+  const savedPhoto = localStorage.getItem('fotoPerfil');
+  if (savedPhoto) actualizarChipFoto(savedPhoto);
 }
 
 
@@ -915,6 +925,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('user-chip').style.display = 'flex';
     document.getElementById('user-chip-name').textContent = saved.charAt(0).toUpperCase();
+    const savedPhoto = localStorage.getItem('fotoPerfil');
+    if (savedPhoto) actualizarChipFoto(savedPhoto);
   }
   // Enter key on login
   document.getElementById('login-nombre').addEventListener('keydown', e => {
@@ -923,12 +935,69 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function cambiarUsuario() {
-  if (!confirm('¿Cambiar de usuario?')) return;
+  cerrarSesion();
+}
+
+function cerrarSesion() {
+  if (!confirm('¿Cerrar sesión?')) return;
   localStorage.removeItem('usuario');
+  localStorage.removeItem('tallas');
+  localStorage.removeItem('fotoPerfil');
   currentUser = null;
+  cerrarPerfil();
   document.getElementById('user-chip').style.display = 'none';
+  document.getElementById('user-chip').style.backgroundImage = 'none';
   document.getElementById('login-nombre').value = '';
   document.getElementById('login-overlay').style.display = 'flex';
+  // Reset login tallas grid
+  const grid = document.getElementById('login-tallas-grid');
+  if (grid) grid.style.display = 'grid';
+  document.getElementById('login-sub-text').textContent = '¿Cómo te llamas?';
+}
+
+function subirFotoPerfil(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    // Resize to small avatar
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const size = 200;
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      // Crop to square
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      const b64 = canvas.toDataURL('image/jpeg', 0.7);
+      localStorage.setItem('fotoPerfil', b64);
+      // Show in modal
+      document.getElementById('perfil-avatar-img').src = b64;
+      document.getElementById('perfil-avatar-img').style.display = 'block';
+      document.getElementById('perfil-avatar-inicial').style.display = 'none';
+      // Update header chip
+      actualizarChipFoto(b64);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function actualizarChipFoto(src) {
+  const chip = document.getElementById('user-chip');
+  if (!chip) return;
+  if (src) {
+    chip.style.backgroundImage = `url(${src})`;
+    chip.style.backgroundSize = 'cover';
+    chip.style.backgroundPosition = 'center';
+    document.getElementById('user-chip-name').style.display = 'none';
+  } else {
+    chip.style.backgroundImage = 'none';
+    document.getElementById('user-chip-name').style.display = 'block';
+  }
 }
 
 function canDelete(createdBy) {
@@ -1093,6 +1162,17 @@ function abrirPerfil() {
   if (!currentUser) return;
   document.getElementById('perfil-modal').style.display = 'flex';
   document.getElementById('perfil-nombre-display').textContent = currentUser;
+  document.getElementById('perfil-avatar-inicial').textContent = currentUser.charAt(0).toUpperCase();
+  // Show saved photo
+  const savedPhoto = localStorage.getItem('fotoPerfil');
+  if (savedPhoto) {
+    document.getElementById('perfil-avatar-img').src = savedPhoto;
+    document.getElementById('perfil-avatar-img').style.display = 'block';
+    document.getElementById('perfil-avatar-inicial').style.display = 'none';
+  } else {
+    document.getElementById('perfil-avatar-img').style.display = 'none';
+    document.getElementById('perfil-avatar-inicial').style.display = 'block';
+  }
   // Pre-fill with saved tallas
   const saved = JSON.parse(localStorage.getItem('tallas') || '{}');
   document.getElementById('perfil-camiseta').value = saved.camiseta || '';
@@ -1250,51 +1330,59 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 </script>
 
 <!-- PERFIL MODAL -->
-<div id="perfil-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+<div id="perfil-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
       <div style="font-size:16px;font-weight:700;color:var(--texto)">👤 Mi perfil</div>
-      <button onclick="cerrarPerfil()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
+      <button onclick="cerrarPerfil()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:4px 8px">✕</button>
     </div>
-    <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">NOMBRE</div>
-    <div style="font-size:15px;font-weight:600;color:var(--texto);margin-bottom:16px" id="perfil-nombre-display"></div>
+
+    <!-- Avatar foto -->
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="position:relative;display:inline-block">
+        <div id="perfil-avatar" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#E8510A,#FF7A3D);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#fff;margin:0 auto;overflow:hidden;box-shadow:0 4px 16px rgba(232,81,10,.3)">
+          <span id="perfil-avatar-inicial"></span>
+          <img id="perfil-avatar-img" style="display:none;width:100%;height:100%;object-fit:cover;" alt="foto">
+        </div>
+        <label for="foto-input" style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:var(--ora);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);border:2px solid #fff;font-size:14px">📷</label>
+        <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="subirFotoPerfil(event)">
+      </div>
+      <div style="font-size:16px;font-weight:700;color:var(--texto);margin-top:10px" id="perfil-nombre-display"></div>
+    </div>
+
+    <!-- Tallas -->
     <div style="font-size:12px;font-weight:700;color:var(--ora-dd);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Tallas de ropa</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAMISETA</div>
-        <select id="perfil-camiseta" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none">
-          <option value="">-</option>
-          <option>XS</option><option>S</option><option>M</option><option>L</option>
-          <option>XL</option><option>XXL</option><option>XXXL</option>
+        <select id="perfil-camiseta" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+          <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">SUDADERA</div>
-        <select id="perfil-sudadera" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none">
-          <option value="">-</option>
-          <option>XS</option><option>S</option><option>M</option><option>L</option>
-          <option>XL</option><option>XXL</option><option>XXXL</option>
+        <select id="perfil-sudadera" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+          <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">PETO</div>
-        <select id="perfil-peto" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none">
-          <option value="">-</option>
-          <option>XS</option><option>S</option><option>M</option><option>L</option>
-          <option>XL</option><option>XXL</option><option>XXXL</option>
+        <select id="perfil-peto" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+          <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAZADORA</div>
-        <select id="perfil-cazadora" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none">
-          <option value="">-</option>
-          <option>XS</option><option>S</option><option>M</option><option>L</option>
-          <option>XL</option><option>XXL</option><option>XXXL</option>
+        <select id="perfil-cazadora" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+          <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
     </div>
-    <button onclick="guardarPerfil()" style="width:100%;padding:13px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(232,81,10,.3);margin-bottom:10px">Guardar tallas</button>
-    <button onclick="cambiarUsuario()" style="width:100%;padding:11px;background:#fff;color:var(--mal);border:1.5px solid #FFD0D0;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Cambiar de usuario</button>
+
+    <!-- Buttons -->
+    <button onclick="guardarPerfil()" style="width:100%;padding:13px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(232,81,10,.3);margin-bottom:10px;min-height:48px">💾 Guardar cambios</button>
+    <button onclick="cerrarSesion()" style="width:100%;padding:13px;background:#fff;color:var(--mal);border:1.5px solid #FFD0D0;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;min-height:48px">🚪 Cerrar sesión</button>
   </div>
 </div>
 
