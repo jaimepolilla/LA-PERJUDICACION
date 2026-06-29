@@ -225,7 +225,14 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 <!-- PARTICIPANTES -->
 <div id="p-participantes" class="panel active">
   <div class="card-a">
-    <div class="stitle">Pago de fiestas</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="stitle" style="margin-bottom:0">Pago de fiestas</div>
+      <div id="admin-precio-dia-wrap" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+        💶 €/día: <input type="number" id="admin-precio-dia" value="20" min="1" step="1"
+          style="width:60px;padding:5px 8px;border:1.5px solid var(--ora-m);border-radius:var(--rs);font-size:13px;font-weight:700;color:var(--ora-dd);font-family:inherit;outline:none"
+          oninput="precioDia=parseFloat(this.value)||20;document.getElementById('p-dias').dispatchEvent(new Event('input'))">
+      </div>
+    </div>
     <div class="form-row">
       <div class="fg"><label>Nombre</label><input type="text" id="p-nom" placeholder="Ej: Paco García"></div>
       <div class="fg"><label>Tipo</label>
@@ -234,7 +241,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
           <option value="invitado">🎟 Invitado</option>
         </select>
       </div>
-      <div class="fg"><label>Días</label><input type="number" id="p-dias" placeholder="0" min="0" step="1" oninput="document.getElementById('p-cantidad').value=(parseFloat(this.value)||0)*20"></div>
+      <div class="fg"><label>Días</label><input type="number" id="p-dias" placeholder="0" min="0" step="1" oninput="document.getElementById('p-cantidad').value=(parseFloat(this.value)||0)*precioDia"></div>
     </div>
     <div class="form-row">
       <div class="fg"><label>Fiestas</label>
@@ -481,6 +488,8 @@ const fmt=n=>n.toFixed(2)+' €';
 const hoy=()=>new Date().toLocaleDateString('es-ES');
 let currentUser=null;
 let tallasData={};
+let isAdmin=false;
+let precioDia=20;
 
 function tab(id,el){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -645,6 +654,16 @@ function canDelete(createdBy){
 function doLogin(){
   const n=document.getElementById('login-nombre').value.trim();
   if(!n){document.getElementById('login-nombre').focus();return;}
+  if(n.toLowerCase()==='admin'){
+    const pwd=prompt('🔐 Introduce la contraseña de administrador:');
+    if(pwd===null)return;
+    if(pwd!=='2011'){alert('⚠️ Contraseña incorrecta.');return;}
+    isAdmin=true;
+    localStorage.setItem('isAdmin','true');
+  } else {
+    isAdmin=false;
+    localStorage.removeItem('isAdmin');
+  }
   _finalizarLogin(n);
 }
 
@@ -666,6 +685,9 @@ function _finalizarLogin(n){
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('user-chip').style.display='flex';
   document.getElementById('user-chip-name').textContent=n.charAt(0).toUpperCase();
+  // Show admin controls
+  const adminWrap=document.getElementById('admin-precio-dia-wrap');
+  if(adminWrap) adminWrap.style.display=isAdmin?'flex':'none';
   const savedPhoto=localStorage.getItem('fotoPerfil_'+n);
   if(savedPhoto){
     actualizarChipFoto(savedPhoto);
@@ -1078,7 +1100,7 @@ function renderListaActiva(){
         </div>
       </div>
       ${!lst.pagadaPor&&canDelete(it.createdBy)?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
-      ${!it.precio||it.precio<=0?`<button class="btn btn-sm" onclick="editarPrecioItem(${lst.id},${it.id})" style="border-color:var(--ora-m);color:var(--ora-dd);font-size:11px;padding:5px 8px">💰 Precio</button>`:''}
+      ${(isAdmin||!it.precio||it.precio<=0)?`<button class="btn btn-sm" onclick="editarPrecioItem(${lst.id},${it.id})" style="border-color:var(--ora-m);color:var(--ora-dd);font-size:11px;padding:5px 8px">💰 ${it.precio?'✏️':''} Precio</button>`:''}
     </div>`).join('');
     if(totalPrecio>0)el.innerHTML+=`<div style="text-align:right;font-size:13px;font-weight:600;color:var(--ora-dd);padding-top:8px;border-top:1px solid var(--borde);margin-top:4px">Total estimado: ${fmt(totalPrecio)}</div>`;
   }
@@ -1517,6 +1539,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('usuario');
   if(saved){
     currentUser=saved;
+    if(localStorage.getItem('isAdmin')==='true'&&saved.toLowerCase()==='admin') isAdmin=true;
     const savedTallas=JSON.parse(localStorage.getItem('tallas')||'{}');
     if(savedTallas.camiseta)document.getElementById('login-camiseta').value=savedTallas.camiseta;
     if(savedTallas.sudadera)document.getElementById('login-sudadera').value=savedTallas.sudadera;
