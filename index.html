@@ -54,8 +54,8 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 .nav-btn:hover{color:var(--ora);}
 
 /* PANELS */
-.panel{display:none;padding:16px;max-width:700px;margin:0 auto;}
-.panel.active{display:block;}
+.panel{display:none!important;padding:16px;max-width:700px;margin:0 auto;}
+.panel.active{display:block!important;}
 
 /* CARDS */
 .card{background:#fff;border:1px solid var(--borde);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
@@ -197,6 +197,14 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">CAZADORA</div>
         <select id="login-cazadora" class="login-input" style="margin-bottom:0;padding:10px 12px">
+          <option value="">-</option>
+          <option>XS</option><option>S</option><option>M</option><option>L</option>
+          <option>XL</option><option>XXL</option><option>XXXL</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">POLO</div>
+        <select id="login-polo" class="login-input" style="margin-bottom:0;padding:10px 12px">
           <option value="">-</option>
           <option>XS</option><option>S</option><option>M</option><option>L</option>
           <option>XL</option><option>XXL</option><option>XXXL</option>
@@ -487,7 +495,8 @@ function _finalizarLogin(n){
       camiseta:document.getElementById('login-camiseta').value,
       sudadera:document.getElementById('login-sudadera').value,
       peto:document.getElementById('login-peto').value,
-      cazadora:document.getElementById('login-cazadora').value
+      cazadora:document.getElementById('login-cazadora').value,
+      polo:document.getElementById('login-polo').value
     };
     localStorage.setItem('tallas',JSON.stringify(tallas));
     saveTallas(n,tallas);
@@ -555,6 +564,7 @@ function checkExistingUser(nombre){
 
 // ── PARTICIPANTES ────────────────────────────────────────────
 function addParticipante(){
+  S._ts=Date.now();
   const n=document.getElementById('p-nom').value.trim();
   const dias=parseInt(document.getElementById('p-dias').value)||0;
   const c=parseFloat(document.getElementById('p-cantidad').value)||0;
@@ -632,6 +642,7 @@ function updSelects(){
 
 // ── GASTOS ───────────────────────────────────────────────────
 function addGasto(){
+  S._ts=Date.now();
   const c=document.getElementById('g-con').value.trim();
   const i=parseFloat(document.getElementById('g-imp').value);
   const p=document.getElementById('g-pag-txt').value.trim()||currentUser||'';
@@ -666,6 +677,7 @@ function renderGastos(){
 
 // ── INGRESOS ─────────────────────────────────────────────────
 function addIngreso(){
+  S._ts=Date.now();
   const c=document.getElementById('i-con').value.trim();
   const i=parseFloat(document.getElementById('i-imp').value);
   const o=parseInt(document.getElementById('i-ori').value)||null;
@@ -713,6 +725,9 @@ function balTab(t){
 
 // ── RESUMEN ──────────────────────────────────────────────────
 function renderResumen(){
+  // Only render when resumen is visible
+  const balRes=document.getElementById('bal-resumen');
+  if(!balRes||balRes.style.display==='none')return;
   const tI=S.ingresos.reduce((a,g)=>a+g.importe,0);
   const tG=S.gastos.reduce((a,g)=>a+g.importe,0);
   const sal=tI-tG;
@@ -787,13 +802,16 @@ function delLista(id,e){
 
 function addItem(){
   if(!S.listaActiva)return;
-  const n=document.getElementById('li-nom').value.trim();
+  const lst=S.listas.find(l=>l.id===S.listaActiva);
+  if(!lst)return;
+  if(lst.pagadaPor){alert('Esta lista ya está marcada como pagada.');return;}
+  S._ts=Date.now(); // Prevent Firebase snapshot from overwriting
   const q=document.getElementById('li-qty').value.trim();
+  const n=document.getElementById('li-nom').value.trim();
+  const tipo=document.getElementById('li-tipo').value;
   const pr=parseFloat(document.getElementById('li-precio').value)||0;
   if(!n)return;
-  const lst=S.listas.find(l=>l.id===S.listaActiva);
-  const tipo=document.getElementById('li-tipo').value;
-  if(lst)lst.items.push({id:Date.now(),nombre:n,tipo,qty:q,precio:pr,done:false,createdBy:currentUser});
+  lst.items.push({id:Date.now(),nombre:n,tipo,qty:q,precio:pr,done:false,createdBy:currentUser,fechaAdd:hoy()});
   document.getElementById('li-nom').value='';
   document.getElementById('li-qty').value='';
   document.getElementById('li-precio').value='';
@@ -817,8 +835,14 @@ function pagarLista(){
   const lst=S.listas.find(l=>l.id===S.listaActiva);
   if(!lst)return;
   const pagNom=document.getElementById('l-pagador-txt').value.trim()||currentUser||'';
-  const importe=parseFloat(document.getElementById('l-importe').value)||lst.items.reduce((a,i)=>a+i.precio,0);
-  if(!pagNom||importe<=0)return;
+  // Check for items without price
+  const sinPrecio=lst.items.filter(i=>!i.precio||i.precio<=0);
+  if(sinPrecio.length>0){
+    const nombres=sinPrecio.map(i=>'"'+i.nombre+'"').join(', ');
+    if(!confirm('⚠️ Artículos sin precio: ' + nombres + '\n\n¿Quieres continuar igualmente?'))return;
+  }
+  const importe=parseFloat(document.getElementById('l-importe').value)||lst.items.reduce((a,i)=>a+(i.precio||0),0);
+  if(!pagNom||importe<=0){alert('Indica el importe total antes de marcar como pagada.');return;}
   if(lst.gastoId)S.gastos=S.gastos.filter(g=>g.id!==lst.gastoId);
   const gastoId=Date.now();
   lst.pagadaPor=pagNom;lst.importe=importe;lst.gastoId=gastoId;lst.fechaPago=hoy();
@@ -917,8 +941,8 @@ function renderRopa(){
   if(!el)return;
   const socios=Object.entries(tallasData);
   if(!socios.length){el.innerHTML='<div class="empty">Aún no hay tallas registradas</div>';return;}
-  const prendas=['camiseta','sudadera','peto','cazadora'];
-  const icons={camiseta:'👕',sudadera:'🧥',peto:'👖',cazadora:'🧣'};
+  const prendas=['camiseta','sudadera','peto','cazadora','polo'];
+  const icons={camiseta:'👕',sudadera:'🧥',peto:'👖',cazadora:'🧣',polo:'👔'};
   el.innerHTML=socios.map(([nombre,t])=>`
     <div class="li">
       <div class="av" style="${t.externo?'background:linear-gradient(135deg,#666,#999)':''}">${nombre.charAt(0).toUpperCase()}</div>
@@ -942,8 +966,8 @@ function eliminarExterno(nombre){
 function exportarRopaExcel(){
   const socios=Object.entries(tallasData);
   if(!socios.length){alert('No hay tallas registradas todavía.');return;}
-  const headers=['Nombre','Camiseta','Sudadera','Peto','Cazadora'];
-  const rows=socios.map(([nombre,t])=>[nombre,t.camiseta||'-',t.sudadera||'-',t.peto||'-',t.cazadora||'-']);
+  const headers=['Nombre','Camiseta','Sudadera','Peto','Cazadora','Polo'];
+  const rows=socios.map(([nombre,t])=>[nombre,t.camiseta||'-',t.sudadera||'-',t.peto||'-',t.cazadora||'-',t.polo||'-']);
   let csv='\uFEFF'+headers.join(';')+'\n'+rows.map(r=>r.join(';')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -962,7 +986,7 @@ function cerrarExterno(){document.getElementById('externo-modal').style.display=
 function guardarExterno(){
   const nombre=document.getElementById('externo-nombre').value.trim();
   if(!nombre){document.getElementById('externo-nombre').focus();return;}
-  const tallas={camiseta:document.getElementById('externo-camiseta').value,sudadera:document.getElementById('externo-sudadera').value,peto:document.getElementById('externo-peto').value,cazadora:document.getElementById('externo-cazadora').value,externo:true,addedBy:currentUser};
+  const tallas={camiseta:document.getElementById('externo-camiseta').value,sudadera:document.getElementById('externo-sudadera').value,peto:document.getElementById('externo-peto').value,cazadora:document.getElementById('externo-cazadora').value,polo:document.getElementById('externo-polo').value,externo:true,addedBy:currentUser};
   tallasData[nombre]=tallas;saveTallas(nombre,tallas);cerrarExterno();renderRopa();showSync('✅ Tallas guardadas');
 }
 
@@ -1031,12 +1055,13 @@ function abrirPerfil(){
   document.getElementById('perfil-sudadera').value=saved.sudadera||'';
   document.getElementById('perfil-peto').value=saved.peto||'';
   document.getElementById('perfil-cazadora').value=saved.cazadora||'';
+  document.getElementById('perfil-polo').value=saved.polo||'';
 }
 
 function cerrarPerfil(){document.getElementById('perfil-modal').style.display='none';}
 
 function guardarPerfil(){
-  const tallas={camiseta:document.getElementById('perfil-camiseta').value,sudadera:document.getElementById('perfil-sudadera').value,peto:document.getElementById('perfil-peto').value,cazadora:document.getElementById('perfil-cazadora').value};
+  const tallas={camiseta:document.getElementById('perfil-camiseta').value,sudadera:document.getElementById('perfil-sudadera').value,peto:document.getElementById('perfil-peto').value,cazadora:document.getElementById('perfil-cazadora').value,polo:document.getElementById('perfil-polo').value};
   localStorage.setItem('tallas',JSON.stringify(tallas));
   if(!db){cerrarPerfil();showSync('✅ Tallas guardadas');return;}
   db.collection('perjudicacion').doc('tallas').get().then(doc=>{
@@ -1201,6 +1226,7 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
       <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">SUDADERA</div><select id="externo-sudadera" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
       <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">PETO</div><select id="externo-peto" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
       <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAZADORA</div><select id="externo-cazadora" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">POLO</div><select id="externo-polo" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
     </div>
     <button onclick="guardarExterno()" style="width:100%;padding:13px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(232,81,10,.3)">Guardar</button>
   </div>
@@ -1252,6 +1278,12 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAZADORA</div>
         <select id="perfil-cazadora" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+          <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">POLO</div>
+        <select id="perfil-polo" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
           <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
