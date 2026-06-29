@@ -937,6 +937,11 @@ function saveTallas(nombre, tallas) {
 }
 
 function savePhoto(nombre, b64) {
+  // Update local tallasData immediately
+  if (!tallasData[nombre]) tallasData[nombre] = {};
+  tallasData[nombre].foto = b64;
+  // Update chip if it's the current user
+  if (nombre === currentUser) actualizarChipFoto(b64);
   if (!db) { setTimeout(() => savePhoto(nombre, b64), 1000); return; }
   db.collection('perjudicacion').doc('tallas').get().then(doc => {
     const data = doc.exists ? doc.data() : {};
@@ -1039,15 +1044,16 @@ function subirFotoPerfil(event) {
 
 function actualizarChipFoto(src) {
   const chip = document.getElementById('user-chip');
+  const chipName = document.getElementById('user-chip-name');
   if (!chip) return;
   if (src) {
-    chip.style.backgroundImage = `url(${src})`;
+    chip.style.backgroundImage = 'url(' + src + ')';
     chip.style.backgroundSize = 'cover';
     chip.style.backgroundPosition = 'center';
-    document.getElementById('user-chip-name').style.display = 'none';
+    if (chipName) chipName.style.display = 'none';
   } else {
     chip.style.backgroundImage = 'none';
-    document.getElementById('user-chip-name').style.display = 'block';
+    if (chipName) chipName.style.display = 'block';
   }
 }
 
@@ -1209,17 +1215,30 @@ function exportarRopaExcel() {
 }
 
 // ── PERFIL MODAL ─────────────────────────────────────────────
+
+function _mostrarFotoEnPerfil(src) {
+  const img = document.getElementById('perfil-avatar-img');
+  const ini = document.getElementById('perfil-avatar-inicial');
+  if (!img || !ini) return;
+  img.src = src;
+  img.style.display = 'block';
+  ini.style.display = 'none';
+}
+
 function abrirPerfil() {
   if (!currentUser) return;
   document.getElementById('perfil-modal').style.display = 'flex';
   document.getElementById('perfil-nombre-display').textContent = currentUser;
   document.getElementById('perfil-avatar-inicial').textContent = currentUser.charAt(0).toUpperCase();
-  // Show saved photo
+  // Show saved photo - check localStorage first, then Firebase
   const savedPhoto = localStorage.getItem('fotoPerfil_' + (currentUser||''));
   if (savedPhoto) {
-    document.getElementById('perfil-avatar-img').src = savedPhoto;
-    document.getElementById('perfil-avatar-img').style.display = 'block';
-    document.getElementById('perfil-avatar-inicial').style.display = 'none';
+    _mostrarFotoEnPerfil(savedPhoto);
+  } else if (db && tallasData[currentUser] && tallasData[currentUser].foto) {
+    const foto = tallasData[currentUser].foto;
+    localStorage.setItem('fotoPerfil_' + currentUser, foto);
+    _mostrarFotoEnPerfil(foto);
+    actualizarChipFoto(foto);
   } else {
     document.getElementById('perfil-avatar-img').style.display = 'none';
     document.getElementById('perfil-avatar-inicial').style.display = 'block';
@@ -1244,20 +1263,22 @@ function guardarPerfil() {
     cazadora: document.getElementById('perfil-cazadora').value
   };
   localStorage.setItem('tallas', JSON.stringify(tallas));
-  // Update local cache immediately so renderRopa works right away
-  tallasData[currentUser] = tallas;
   if (!db) { cerrarPerfil(); showSync('✅ Tallas guardadas'); return; }
   db.collection('perjudicacion').doc('tallas').get().then(doc => {
     const data = doc.exists ? doc.data() : {};
-    data[currentUser] = tallas;
+    // Preserve existing photo
+    const existingFoto = (data[currentUser] && data[currentUser].foto) || null;
+    data[currentUser] = Object.assign({}, tallas);
+    if (existingFoto) data[currentUser].foto = existingFoto;
+    tallasData[currentUser] = data[currentUser];
     return db.collection('perjudicacion').doc('tallas').set(data);
   }).then(() => {
     cerrarPerfil();
     showSync('✅ Tallas guardadas');
     renderRopa();
-  }).catch(e => {
+  }).catch(() => {
     cerrarPerfil();
-    showSync('⚠️ Error al guardar tallas');
+    showSync('⚠️ Error al guardar');
   });
 }
 
