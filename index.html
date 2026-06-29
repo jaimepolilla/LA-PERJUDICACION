@@ -412,9 +412,14 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
     <div class="stitle">Tallas de la peña</div>
     <div id="ropa-lista"><div class="empty">Cargando...</div></div>
   </div>
-  <button onclick="exportarRopaExcel()" class="btn btn-p" style="width:100%;padding:13px;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;">
-    📥 Exportar a Excel
-  </button>
+  <div style="display:flex;gap:10px;margin-top:0">
+    <button onclick="exportarRopaExcel()" class="btn btn-p" style="flex:1;padding:13px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;">
+      📥 Exportar tallas
+    </button>
+    <button onclick="abrirPedido()" class="btn btn-p" style="flex:1;padding:13px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#2E7D32,#43A047);box-shadow:0 4px 12px rgba(46,125,50,.3)">
+      🛍️ Hacer pedido
+    </button>
+  </div>
 </div>
 
 <!-- IBAN -->
@@ -1184,6 +1189,141 @@ function actualizarChipFoto(src){
   else{chip.style.backgroundImage='none';if(chipName)chipName.style.display='block';}
 }
 
+
+// ── PEDIDO DE ROPA ───────────────────────────────────────────
+let pedidoData = {}; // {nombre: {camiseta:{checked,qty}, sudadera:{...}, ...}}
+
+function abrirPedido(){
+  document.getElementById('pedido-modal').style.display='flex';
+  renderPedido();
+}
+
+function cerrarPedido(){
+  document.getElementById('pedido-modal').style.display='none';
+}
+
+function renderPedido(){
+  var el = document.getElementById('pedido-lista');
+  var socios = Object.entries(tallasData).filter(function(e){return !e[1].externo;});
+  if(!socios.length){el.innerHTML='<div class="empty">No hay socios con tallas registradas</div>';return;}
+  var prendas = ['camiseta','sudadera','peto','cazadora','polo'];
+  var icons   = {camiseta:'Camiseta',sudadera:'Sudadera',peto:'Peto',cazadora:'Cazadora',polo:'Polo'};
+  var emojis  = {camiseta:'👕',sudadera:'🧥',peto:'👖',cazadora:'🧣',polo:'👔'};
+  var out = '';
+  for(var si=0;si<socios.length;si++){
+    var nombre = socios[si][0], t = socios[si][1];
+    if(!pedidoData[nombre]) pedidoData[nombre]={};
+    var prendasConTalla = prendas.filter(function(p){return t[p];});
+    if(!prendasConTalla.length) continue;
+    var prendasHtml = '';
+    for(var pi=0;pi<prendasConTalla.length;pi++){
+      var p = prendasConTalla[pi];
+      var pd = pedidoData[nombre][p] || {checked:false,qty:1};
+      var bg = pd.checked ? 'var(--ora-l)' : 'var(--gris)';
+      var brd = pd.checked ? 'var(--ora-m)' : 'transparent';
+      var op = pd.checked ? '1' : '0.4';
+      var chk = pd.checked ? ' checked' : '';
+      var dataAttrs = ' data-nombre="'+nombre+'" data-prenda="'+p+'"';
+      prendasHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:'+bg+';border-radius:var(--rs);border:1.5px solid '+brd+'">'
+        +'<input type="checkbox"'+chk+dataAttrs+' class="pedido-cb" style="width:16px;height:16px;accent-color:var(--ora);cursor:pointer;flex-shrink:0">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600">'+emojis[p]+' '+icons[p]+'</div>'
+        +'<div style="font-size:11px;color:var(--muted)">Talla: '+t[p]+'</div>'
+        +'</div>'
+        +'<input type="number" value="'+(pd.qty||1)+'" min="1" max="99"'+dataAttrs+' class="pedido-qty" style="width:46px;padding:4px 6px;border:1.5px solid var(--borde);border-radius:6px;font-size:13px;font-family:inherit;text-align:center;opacity:'+op+'">'
+        +'</div>';
+    }
+    out += '<div style="border:1px solid var(--borde);border-radius:var(--r);padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+      +'<div class="av" style="width:34px;height:34px;font-size:13px">'+nombre.charAt(0).toUpperCase()+'</div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--texto)">'+nombre+'</div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+prendasHtml+'</div>'
+      +'</div>';
+  }
+  el.innerHTML = out || '<div class="empty">No hay tallas registradas</div>';
+}
+
+function togglePedidoItem(nombre, prenda, checked){
+  if(!pedidoData[nombre]) pedidoData[nombre]={};
+  if(!pedidoData[nombre][prenda]) pedidoData[nombre][prenda]={checked:false,qty:1};
+  pedidoData[nombre][prenda].checked=checked;
+  renderPedido();
+}
+
+function setPedidoQty(nombre, prenda, qty){
+  if(!pedidoData[nombre]) pedidoData[nombre]={};
+  if(!pedidoData[nombre][prenda]) pedidoData[nombre][prenda]={checked:false,qty:1};
+  pedidoData[nombre][prenda].qty=parseInt(qty)||1;
+}
+
+// Event delegation for pedido checkboxes and qty inputs
+document.addEventListener('change', function(e){
+  if(e.target.classList.contains('pedido-cb')){
+    togglePedidoItem(e.target.dataset.nombre, e.target.dataset.prenda, e.target.checked);
+  }
+  if(e.target.classList.contains('pedido-qty')){
+    setPedidoQty(e.target.dataset.nombre, e.target.dataset.prenda, e.target.value);
+  }
+});
+
+function guardarPedido(){
+  // Save pedidoData to Firebase tallas doc
+  if(!db){showSync('⚠️ Sin conexión');return;}
+  db.collection('perjudicacion').doc('pedido').set({
+    data: pedidoData,
+    fecha: new Date().toLocaleDateString('es-ES'),
+    guardadoPor: currentUser||''
+  }).then(()=>showSync('✅ Pedido guardado'))
+    .catch(()=>showSync('⚠️ Error al guardar'));
+}
+
+function exportarPedidoExcel(){
+  const prendas=['camiseta','sudadera','peto','cazadora','polo'];
+  const icons={camiseta:'👕 Camiseta',sudadera:'🧥 Sudadera',peto:'👖 Peto',cazadora:'🧣 Cazadora',polo:'👔 Polo'};
+  const rows=[];
+  rows.push(['Socio','Prenda','Talla','Cantidad']);
+
+  Object.entries(pedidoData).forEach(([nombre, prendaMap])=>{
+    const t = tallasData[nombre]||{};
+    prendas.forEach(p=>{
+      const pd = prendaMap[p];
+      if(pd && pd.checked && t[p]){
+        rows.push([nombre, icons[p]||p, t[p], pd.qty||1]);
+      }
+    });
+  });
+
+  if(rows.length<=1){alert('No hay nada marcado en el pedido.');return;}
+
+  // Add summary section
+  rows.push([]);
+  rows.push(['--- RESUMEN POR PRENDA ---']);
+  rows.push(['Prenda','Talla','Cantidad total']);
+  const resumen={};
+  rows.slice(1).forEach(r=>{
+    if(r.length<4||!r[1])return;
+    const key=r[1]+'|'+r[2];
+    resumen[key]=(resumen[key]||0)+r[3];
+  });
+  Object.entries(resumen).forEach(([k,qty])=>{
+    const [prenda,talla]=k.split('|');
+    rows.push([prenda,talla,qty]);
+  });
+
+  let csv='\uFEFF'+rows.map(r=>r.join(';')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='pedido_ropa_perjudicacion.csv';a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('click',e=>{
+  const m=document.getElementById('pedido-modal');
+  if(m&&e.target===m)cerrarPedido();
+});
+
 // ── EXPORT ROPA EXCEL ────────────────────────────────────────
 // (included above in renderRopa section)
 
@@ -1308,6 +1448,23 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
       <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">POLO</div><select id="externo-polo" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
     </div>
     <button onclick="guardarExterno()" style="width:100%;padding:13px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(232,81,10,.3)">Guardar</button>
+  </div>
+</div>
+
+
+<!-- PEDIDO MODAL -->
+<div id="pedido-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:16px;font-weight:700;color:var(--texto)">🛍️ Pedido de ropa</div>
+      <button onclick="cerrarPedido()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Marca lo que quieres pedir y la cantidad</div>
+    <div id="pedido-lista"></div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="exportarPedidoExcel()" style="flex:1;padding:12px;background:linear-gradient(135deg,#2E7D32,#43A047);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(46,125,50,.3)">📥 Exportar pedido</button>
+      <button onclick="guardarPedido()" style="flex:1;padding:12px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(232,81,10,.3)">💾 Guardar pedido</button>
+    </div>
   </div>
 </div>
 
