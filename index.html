@@ -476,6 +476,20 @@ function copyIban(){
 }
 
 
+
+function editarPrecioItem(lstId, itemId){
+  const lst=S.listas.find(l=>l.id===lstId);
+  if(!lst)return;
+  const it=lst.items.find(i=>i.id===itemId);
+  if(!it)return;
+  const precio=prompt(`💰 Precio de "${it.nombre}" (€):`, it.precio||'');
+  if(precio===null)return;
+  const val=parseFloat(precio)||0;
+  it.precio=val;
+  renderListaActiva();
+  saveToFirebase();
+}
+
 function editarListaPagada(){
   const lst=S.listas.find(l=>l.id===S.listaActiva);
   if(!lst)return;
@@ -956,7 +970,8 @@ function renderListaActiva(){
           ${it.createdBy?'👤 '+it.createdBy:''}${it.fechaAdd?' · '+it.fechaAdd:''}
         </div>
       </div>
-      ${canDelete(it.createdBy)?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
+      ${!lst.pagadaPor&&canDelete(it.createdBy)?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
+      ${!it.precio||it.precio<=0?`<button class="btn btn-sm" onclick="editarPrecioItem(${lst.id},${it.id})" style="border-color:var(--ora-m);color:var(--ora-dd);font-size:11px;padding:5px 8px">💰 Precio</button>`:''}
     </div>`).join('');
     if(totalPrecio>0)el.innerHTML+=`<div style="text-align:right;font-size:13px;font-weight:600;color:var(--ora-dd);padding-top:8px;border-top:1px solid var(--borde);margin-top:4px">Total estimado: ${fmt(totalPrecio)}</div>`;
   }
