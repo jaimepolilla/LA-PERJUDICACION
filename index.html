@@ -693,10 +693,13 @@ function renderResumen(){
   const be=document.getElementById('r-balance');
   if(!S.participantes.length){be.innerHTML='<div class="empty">Añade participantes para ver el balance</div>';}
   else{
-    // Per-person: aportado (pagado), adelantado en gastos, balance
     be.innerHTML=S.participantes.map(p=>{
       const aportado=p.pagado==='si'?p.cantidad:0;
-      const adelantado=S.gastos.filter(g=>g.pagadorId===p.id).reduce((a,g)=>a+g.importe,0);
+      // Match by pagadorNombre (new) or pagadorId (legacy)
+      const adelantado=S.gastos.filter(g=>{
+        if(g.pagadorNombre) return g.pagadorNombre.toLowerCase()===p.nombre.toLowerCase();
+        return g.pagadorId===p.id;
+      }).reduce((a,g)=>a+g.importe,0);
       const balance=aportado-adelantado;
       let badge;
       if(Math.abs(balance)<0.01) badge='<span class="badge b-ora">Equilibrado</span>';
@@ -705,9 +708,9 @@ function renderResumen(){
       return `<div class="li">
         <div class="av">${ini(p.nombre)}</div>
         <div>
-          <div style="font-size:14px;font-weight:500">${p.nombre}</div>
+          <div style="font-size:14px;font-weight:600">${p.nombre}</div>
           <div style="font-size:12px;color:var(--muted)">
-            Aportado: ${fmt(aportado)} · Adelantado en gastos: ${fmt(adelantado)}
+            Aportado: ${fmt(aportado)} · Adelantado: ${fmt(adelantado)}
           </div>
         </div>
         <div class="ml">${badge}</div>
