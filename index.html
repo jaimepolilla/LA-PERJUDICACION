@@ -461,13 +461,6 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
     </div>
   </div>
 
-  <!-- Admin access -->
-  <div style="margin-top:8px">
-    <button onclick="accederAdmin()" class="btn" style="width:100%;padding:12px;font-size:14px;font-weight:600;color:var(--muted);border-color:var(--borde);display:flex;align-items:center;justify-content:center;gap:8px">
-      🔐 Acceso administrador
-    </button>
-  </div>
-
   <!-- Spotify -->
   <div id="ext-spotify" style="display:none">
     <div class="card" style="text-align:center">
@@ -483,6 +476,13 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       </a>
       <div style="font-size:11px;color:var(--muted)">Se abrirá en la app de Spotify o en el navegador</div>
     </div>
+  </div>
+
+  <!-- Admin access (always visible regardless of sub-tab) -->
+  <div style="margin-top:8px">
+    <button onclick="accederAdmin()" class="btn" style="width:100%;padding:12px;font-size:14px;font-weight:600;color:var(--muted);border-color:var(--borde);display:flex;align-items:center;justify-content:center;gap:8px">
+      🔐 Acceso administrador
+    </button>
   </div>
 
 </div>
@@ -1386,7 +1386,11 @@ function abrirPedido(){
   document.getElementById('pedido-modal').style.display='flex';
   pedidoTieneCambios=false;
   if(db){
-    db.collection('perjudicacion').doc('pedido').get().then(function(doc){
+    // Refresh tallasData first to include any newly added people
+    db.collection('perjudicacion').doc('tallas').get().then(function(tDoc){
+      tallasData = tDoc.exists ? tDoc.data() : {};
+      return db.collection('perjudicacion').doc('pedido').get();
+    }).then(function(doc){
       if(doc.exists && doc.data().data){
         pedidoData = doc.data().data;
       }
