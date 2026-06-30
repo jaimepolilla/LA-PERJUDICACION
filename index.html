@@ -1380,18 +1380,34 @@ function canEditPedido(nombre){
   return false;
 }
 
+let pedidoTieneCambios=false;
+
 function abrirPedido(){
   document.getElementById('pedido-modal').style.display='flex';
-  renderPedido();
+  pedidoTieneCambios=false;
+  if(db){
+    db.collection('perjudicacion').doc('pedido').get().then(function(doc){
+      if(doc.exists && doc.data().data){
+        pedidoData = doc.data().data;
+      }
+      renderPedido();
+    }).catch(function(){renderPedido();});
+  } else {
+    renderPedido();
+  }
 }
 
 function cerrarPedido(){
+  if(pedidoTieneCambios){
+    if(!confirm('⚠️ Tienes cambios sin guardar en tu pedido.\n\n¿Seguro que quieres salir sin guardar?'))return;
+  }
+  pedidoTieneCambios=false;
   document.getElementById('pedido-modal').style.display='none';
 }
 
 function renderPedido(){
   var el = document.getElementById('pedido-lista');
-  var socios = Object.entries(tallasData).filter(function(e){return !e[1].externo && e[0].toLowerCase()!=='admin';});
+  var socios = Object.entries(tallasData).filter(function(e){return e[0].toLowerCase()!=='admin';});
   if(!socios.length){el.innerHTML='<div class="empty">No hay socios con tallas registradas</div>';return;}
   var prendas = ['camiseta','sudadera','peto','cazadora','polo'];
   var icons   = {camiseta:'Camiseta',sudadera:'Sudadera',peto:'Peto',cazadora:'Cazadora',polo:'Polo'};
@@ -1435,6 +1451,7 @@ function togglePedidoItem(nombre, prenda, checked){
   if(!pedidoData[nombre]) pedidoData[nombre]={};
   if(!pedidoData[nombre][prenda]) pedidoData[nombre][prenda]={checked:false,qty:1};
   pedidoData[nombre][prenda].checked=checked;
+  pedidoTieneCambios=true;
   renderPedido();
 }
 
@@ -1442,6 +1459,7 @@ function setPedidoQty(nombre, prenda, qty){
   if(!pedidoData[nombre]) pedidoData[nombre]={};
   if(!pedidoData[nombre][prenda]) pedidoData[nombre][prenda]={checked:false,qty:1};
   pedidoData[nombre][prenda].qty=parseInt(qty)||1;
+  pedidoTieneCambios=true;
 }
 
 // Event delegation for pedido checkboxes and qty inputs
@@ -1459,14 +1477,27 @@ document.addEventListener('change', function(e){
 });
 
 function guardarPedido(){
-  // Save pedidoData to Firebase tallas doc
-  if(!db){showSync('⚠️ Sin conexión');return;}
-  db.collection('perjudicacion').doc('pedido').set({
-    data: pedidoData,
-    fecha: new Date().toLocaleDateString('es-ES'),
-    guardadoPor: currentUser||''
-  }).then(()=>showSync('✅ Pedido guardado'))
-    .catch(()=>showSync('⚠️ Error al guardar'));
+  if(!db){alert('⚠️ Sin conexión a internet, no se puede guardar.');return;}
+  // Merge: read latest from Firebase, update only entries this user can edit, then save
+  db.collection('perjudicacion').doc('pedido').get().then(function(doc){
+    var serverData = (doc.exists && doc.data().data) ? doc.data().data : {};
+    // Overwrite only the entries that belong to current user (own + their externos)
+    Object.keys(pedidoData).forEach(function(nombre){
+      if(canEditPedido(nombre)){
+        serverData[nombre] = pedidoData[nombre];
+      }
+    });
+    return db.collection('perjudicacion').doc('pedido').set({
+      data: serverData,
+      fecha: new Date().toLocaleDateString('es-ES'),
+      guardadoPor: currentUser||''
+    });
+  }).then(function(){
+    pedidoTieneCambios=false;
+    alert('✅ Tu pedido se ha guardado correctamente.');
+  }).catch(function(){
+    alert('⚠️ Error al guardar el pedido. Inténtalo de nuevo.');
+  });
 }
 
 function exportarPedidoExcel(){
