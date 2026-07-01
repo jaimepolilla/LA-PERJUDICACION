@@ -18,134 +18,284 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Perjudicación</title>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;font-family:'Fredoka',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
+/* ── TOKENS ─────────────────────────────────────────── */
 :root{
-  --ora:#E8510A;--ora-d:#C8420A;--ora-dd:#712B13;
-  --ora-l:#FFF2EC;--ora-m:#FFCBB3;
-  --blanco:#FFFFFF;--gris:#F5F7FA;--borde:#E8ECF0;
-  --texto:#1C1C2E;--muted:#8A8FA8;
-  --ok:#00C48C;--mal:#FF4757;--ok-bg:#E6FAF5;--mal-bg:#FFF0F1;
-  --r:14px;--rs:10px;
-  --shadow-sm:0 2px 8px rgba(0,0,0,.06);
-  --shadow-md:0 4px 20px rgba(0,0,0,.10);
+  --bg:        #2d3142;
+  --bg2:       #363b52;
+  --bg3:       #3f4460;
+  --card:      rgba(255,255,255,.08);
+  --card-b:    rgba(255,255,255,.12);
+  --borde:     rgba(255,255,255,.14);
+  --borde2:    rgba(255,255,255,.09);
+
+  --ora:       #ff6b35;
+  --ora2:      #ff8c5a;
+  --ora-g:     linear-gradient(135deg,#ff4500,#ff6b35,#ff9a00);
+  --purple:    #7c3aed;
+  --purple2:   #a855f7;
+  --purple-g:  linear-gradient(135deg,#6d28d9,#7c3aed);
+  --green:     #10b981;
+  --green-g:   linear-gradient(135deg,#059669,#10b981);
+  --red:       #ef4444;
+  --red-bg:    rgba(239,68,68,.12);
+
+  --texto:     #f0f0f8;
+  --texto2:    #b8bcd0;
+  --texto3:    #8890aa;
+  --muted:     #8890aa;
+
+  --ok:        #10b981;
+  --ok-bg:     rgba(16,185,129,.12);
+  --mal:       #ef4444;
+  --mal-bg:    rgba(239,68,68,.1);
+
+  --r:  14px;
+  --rs: 10px;
+  --shadow: 0 8px 32px rgba(0,0,0,.4);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,.3);
 }
 
-body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
+/* ── RESET ───────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Inter',sans-serif;
+  background:#2d3142;
+  color:var(--texto);
+  min-height:100vh;
+}
+input,select,button,textarea{font-family:inherit;}
+input:focus,select:focus{outline:2px solid #ff6b35;outline-offset:0;}
 
-/* HEADER */
+/* ── HEADER ─────────────────────────────────────────── */
 .header{
-  background:linear-gradient(135deg,#E8510A 0%,#FF7A3D 100%);
-  padding:18px 20px 16px;
-  display:flex;align-items:center;justify-content:center;position:relative;
-  box-shadow:0 4px 16px rgba(232,81,10,.35);
+  background:rgba(45,49,66,.92);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--borde);
+  padding:12px 16px;
+  position:sticky;top:0;z-index:90;
+  display:flex;align-items:center;justify-content:center;
 }
-.logo-pill{background:#fff;border-radius:12px;padding:6px 14px;display:flex;align-items:center;box-shadow:var(--shadow-sm);}
-.logo-pill img{height:34px;display:block;}
-.user-chip{width:40px;height:40px;border-radius:50%;background:#fff;color:var(--ora);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;position:absolute;right:14px;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;border:2px solid rgba(255,255,255,.6);transition:transform .15s;-webkit-tap-highlight-color:transparent;}
-.user-chip:hover{transform:scale(1.1);}
+.logo-pill img{height:34px;object-fit:contain;filter:none;}
 
-/* NAV */
-.nav{background:#fff;display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--borde);box-shadow:var(--shadow-sm);}
+/* ── NAV ─────────────────────────────────────────────── */
+.nav{
+  display:flex;overflow-x:auto;gap:0;
+  background:rgba(45,49,66,.95);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--borde);
+  position:sticky;top:59px;z-index:89;
+  scrollbar-width:none;
+}
 .nav::-webkit-scrollbar{display:none;}
-.nav-btn{padding:14px 14px;font-size:13px;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .18s;letter-spacing:.01em;min-height:48px;-webkit-tap-highlight-color:transparent;}
-.nav-btn.active{color:var(--ora);border-bottom-color:var(--ora);}
-.nav-btn:hover{color:var(--ora);}
+.nav-btn{
+  padding:14px 16px;font-size:12px;font-weight:600;
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--texto3);cursor:pointer;white-space:nowrap;
+  display:flex;align-items:center;gap:5px;
+  transition:all .2s;letter-spacing:.03em;min-height:48px;
+  -webkit-tap-highlight-color:transparent;
+  text-transform:uppercase;
+}
+.nav-btn:hover{color:var(--texto2);}
+.nav-btn.active{color:#ff6b35;border-bottom-color:#ff6b35;}
 
-/* PANELS */
+/* ── PANELS ─────────────────────────────────────────── */
 .panel{display:none!important;padding:16px;max-width:700px;margin:0 auto;}
 .panel.active{display:block!important;}
+@media(max-width:480px){.panel{padding:12px;}}
 
-/* CARDS */
-.card{background:#fff;border:1px solid var(--borde);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
-.card-a{background:linear-gradient(135deg,#FFF2EC 0%,#FFE8DC 100%);border:1.5px solid var(--ora-m);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;}
-
-/* SECTION TITLE */
-.stitle{font-size:11px;font-weight:700;color:var(--ora-dd);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;}
-
-/* FORM */
-.form-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end;}
-.fg{flex:1;min-width:110px;}
-.fg label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;letter-spacing:.03em;}
-.fg input,.fg select{
-  width:100%;padding:12px 14px;
-  border:1.5px solid var(--borde);
-  border-radius:var(--rs);font-size:15px;
-  background:#fff;color:var(--texto);outline:none;
-  transition:border-color .15s,box-shadow .15s;
-  min-height:46px;
+/* ── CARDS ───────────────────────────────────────────── */
+.card{
+  background:var(--card);
+  border:1px solid var(--borde);
+  border-radius:var(--r);
+  padding:18px;
+  margin-bottom:14px;
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
 }
-.fg input:focus,.fg select:focus{border-color:var(--ora);box-shadow:0 0 0 3px rgba(232,81,10,.12);}
+.card-a{
+  background:linear-gradient(135deg,rgba(255,107,53,.08),rgba(255,154,0,.05));
+  border:1px solid rgba(255,107,53,.2);
+  border-radius:var(--r);
+  padding:18px;
+  margin-bottom:14px;
+}
+.stitle{
+  font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--texto3);
+  margin-bottom:14px;
+}
 
-/* BUTTONS */
-.btn{padding:11px 18px;font-size:14px;font-weight:600;border:1.5px solid var(--borde);border-radius:var(--rs);background:#fff;color:var(--texto);cursor:pointer;transition:all .15s;min-height:44px;display:inline-flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
-.btn:hover{background:var(--gris);border-color:#ccc;}
+/* ── FORMS ───────────────────────────────────────────── */
+.form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px;}
+.fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:130px;}
+.fg label{font-size:11px;font-weight:600;color:var(--texto3);text-transform:uppercase;letter-spacing:.06em;}
+.fg input,.fg select{
+  width:100%;padding:11px 14px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--borde);
+  border-radius:var(--rs);
+  font-size:14px;color:var(--texto);
+  outline:none;transition:border-color .2s,background .2s;
+  min-height:44px;
+}
+.fg input:focus,.fg select:focus{
+  border-color:#ff6b35;
+  background:rgba(255,107,53,.06);
+}
+.fg select option{background:var(--bg2);color:var(--texto);}
+
+/* ── BUTTONS ─────────────────────────────────────────── */
+.btn{
+  padding:11px 18px;font-size:13px;font-weight:600;
+  border:1px solid var(--borde);border-radius:var(--rs);
+  background:rgba(255,255,255,.06);color:var(--texto);
+  cursor:pointer;transition:all .2s;
+  min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;letter-spacing:.02em;
+}
+.btn:hover{background:rgba(255,255,255,.1);border-color:var(--borde2);}
 .btn:active{transform:scale(.97);}
-.btn-p{background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;box-shadow:0 4px 12px rgba(232,81,10,.3);}
-.btn-p:hover{background:linear-gradient(135deg,#C8420A,#E8510A);box-shadow:0 6px 16px rgba(232,81,10,.4);transform:translateY(-1px);}
+.btn-p{
+  background:var(--ora-g);color:#fff;
+  border:none;
+  box-shadow:0 2px 8px rgba(255,107,53,.2);
+}
+.btn-p:hover{box-shadow:0 3px 10px rgba(255,107,53,.25);transform:translateY(-1px);}
 .btn-p:active{transform:scale(.97);}
-.btn-sm{padding:8px 14px;font-size:13px;min-height:36px;}
-.btn-d{border-color:#FFD0D0;color:var(--mal);background:#FFF5F5;}
-.btn-d:hover{background:var(--mal-bg);}
+.btn-sm{padding:7px 13px;font-size:12px;min-height:34px;}
+.btn-d{border-color:rgba(239,68,68,.3);color:var(--red);background:rgba(239,68,68,.08);}
+.btn-d:hover{background:rgba(239,68,68,.15);}
 
-/* LIST ITEMS */
-.li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--borde);}
+/* ── LIST ITEMS ──────────────────────────────────────── */
+.li{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 0;
+  border-bottom:1px solid var(--borde2);
+}
 .li:last-child{border-bottom:none;}
-.av{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(232,81,10,.3);}
+.av{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--ora-g);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;
+  flex-shrink:0;letter-spacing:-.5px;
+  box-shadow:0 2px 6px rgba(255,107,53,.15);
+}
 .ml{margin-left:auto;display:flex;align-items:center;gap:8px;}
 
-/* BADGES */
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
-.b-ok{background:var(--ok-bg);color:var(--ok);}
-.b-mal{background:var(--mal-bg);color:var(--mal);}
-.b-gray{background:#F0F0F0;color:var(--muted);}
-.b-ora{background:var(--ora-l);color:var(--ora-dd);}
-
-/* STATS */
-.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:14px;}
-.st{
-  background:linear-gradient(135deg,#fff,#f9f9ff);
-  border:1px solid var(--borde);
-  border-radius:var(--r);padding:14px;text-align:center;
-  box-shadow:var(--shadow-sm);
+/* ── PILLS ───────────────────────────────────────────── */
+.pill{
+  padding:8px 16px;font-size:12px;font-weight:600;
+  border:1px solid var(--borde);border-radius:20px;
+  background:rgba(255,255,255,.05);cursor:pointer;color:var(--texto2);
+  transition:all .2s;min-height:36px;display:inline-flex;align-items:center;
+  -webkit-tap-highlight-color:transparent;
 }
-.sn{font-size:22px;font-weight:700;color:var(--ora);}
-.sl{font-size:11px;font-weight:600;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+.pill:hover,.pill.active{
+  background:rgba(255,107,53,.15);
+  border-color:rgba(255,107,53,.4);
+  color:var(--ora2);
+}
 
-/* PILLS (listas) */
-.pills{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px;}
-.pill{padding:9px 16px;font-size:13px;font-weight:600;border:1.5px solid var(--ora-m);border-radius:20px;background:#fff;cursor:pointer;color:var(--ora-dd);transition:all .15s;min-height:40px;display:inline-flex;align-items:center;-webkit-tap-highlight-color:transparent;}
-.pill.active{background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(232,81,10,.3);}
+/* ── BADGES ──────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.03em;}
+.b-ora{background:rgba(255,107,53,.15);color:var(--ora2);border:1px solid rgba(255,107,53,.25);}
+.b-ok{background:rgba(16,185,129,.12);color:var(--ok);border:1px solid rgba(16,185,129,.2);}
+.b-mal{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+.b-gray{background:rgba(255,255,255,.06);color:var(--texto3);border:1px solid var(--borde);}
 
-/* CHECKLIST */
-.ci{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--borde);}
+/* ── STATS GRID ──────────────────────────────────────── */
+.sg{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+  margin-bottom:16px;
+}
+.st{
+  background:rgba(255,255,255,.07);
+  border:1px solid var(--borde);
+  border-radius:var(--rs);
+  padding:14px;text-align:center;
+}
+.sn{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:3px;}
+.sl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--texto3);}
+
+/* ── CHECKLIST ───────────────────────────────────────── */
+.ci{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--borde2);}
 .ci:last-child{border-bottom:none;}
-.ci input[type=checkbox]{width:17px;height:17px;accent-color:var(--ora);flex-shrink:0;cursor:pointer;}
-.ci.done .cin{text-decoration:line-through;color:#ccc;}
-.cin{font-size:14px;flex:1;}
-.ciq{font-size:12px;color:var(--muted);white-space:nowrap;}
-.pbar{height:6px;background:var(--ora-m);border-radius:4px;margin:6px 0 14px;overflow:hidden;}
-.pfill{height:6px;background:linear-gradient(90deg,#E8510A,#FF7A3D);border-radius:4px;transition:width .4s;}
+.ci.done .cin{text-decoration:line-through;opacity:.4;}
+.cin{font-size:14px;font-weight:500;flex:1;}
+.ciq{font-size:13px;font-weight:600;color:var(--ora2);}
+input[type=checkbox]{accent-color:#ff6b35;width:17px;height:17px;cursor:pointer;flex-shrink:0;}
 
-/* EMPTY */
-.empty{text-align:center;color:#ccc;font-size:14px;padding:28px 0;}
+/* ── PROGRESS ────────────────────────────────────────── */
+.prog-wrap{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin:8px 0;}
+.prog{height:100%;background:var(--ora-g);border-radius:2px;transition:width .4s ease;}
 
-/* LOGIN */
-.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#E8510A 0%,#FF7A3D 60%,#FFB347 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:20px;padding:24px;}
-.login-box{background:#fff;border-radius:20px;padding:32px 26px;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.login-logo{height:64px;margin-bottom:18px;}
-.login-title{font-size:20px;font-weight:700;color:var(--texto);margin-bottom:6px;}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:22px;}
-.login-input{width:100%;padding:13px 16px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:16px;outline:none;margin-bottom:16px;font-family:inherit;transition:border-color .15s;}
-.login-input:focus{border-color:var(--ora);box-shadow:0 0 0 3px rgba(232,81,10,.12);}
-.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(232,81,10,.35);transition:all .15s;}
-.login-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,81,10,.45);}
+/* ── SYNC STATUS ─────────────────────────────────────── */
+#sync-status{display:none;}
 
-/* PROGRESS BAR */
-.progress-wrap{height:6px;background:var(--borde);border-radius:4px;margin:8px 0 14px;overflow:hidden;}
-.progress-fill{height:6px;background:linear-gradient(90deg,#E8510A,#FF7A3D);border-radius:4px;transition:width .3s;}
+/* ── EMPTY ───────────────────────────────────────────── */
+.empty{text-align:center;padding:28px 16px;color:var(--texto3);font-size:13px;}
 
-@media(max-width:480px){.header{padding:12px 14px;}.logo-pill img{height:28px;}.panel{padding:12px;}}
+/* ── LOGIN OVERLAY ───────────────────────────────────── */
+#login-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background-image:
+    radial-gradient(ellipse at 30% 20%,rgba(124,58,237,.2) 0%,transparent 50%),
+    radial-gradient(ellipse at 70% 80%,rgba(255,107,53,.15) 0%,transparent 50%);
+}
+.login-box{
+  background:rgba(255,255,255,.1);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:24px;
+  padding:32px 28px;
+  width:100%;max-width:380px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+.login-logo{display:block;margin:0 auto 20px;height:50px;filter:none;}
+.login-title{text-align:center;font-size:20px;font-weight:800;margin-bottom:6px;
+  background:var(--ora-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.login-sub{text-align:center;font-size:13px;color:var(--texto3);margin-bottom:20px;}
+.login-input{
+  width:100%;padding:13px 16px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--borde);
+  border-radius:var(--rs);
+  font-size:15px;color:var(--texto);
+  margin-bottom:14px;outline:none;
+  transition:border-color .2s;
+}
+.login-input:focus{border-color:#ff6b35;}
+.login-btn{
+  width:100%;padding:14px;
+  background:var(--ora-g);color:#fff;
+  border:none;border-radius:var(--rs);
+  font-size:15px;font-weight:700;cursor:pointer;
+  box-shadow:0 2px 8px rgba(255,107,53,.2);
+  transition:all .2s;letter-spacing:.03em;
+}
+.login-btn:hover{box-shadow:0 3px 10px rgba(255,107,53,.25);transform:translateY(-1px);}
+
+/* ── USER CHIP ───────────────────────────────────────── */
+.user-chip{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--ora-g);
+  color:#fff;font-size:15px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  position:absolute;right:14px;
+  box-shadow:0 2px 6px rgba(255,107,53,.2);
+  cursor:pointer;transition:transform .15s;
+  -webkit-tap-highlight-color:transparent;
+  border:2px solid rgba(255,255,255,.2);
+}
+.user-chip:hover{transform:scale(1.08);}
 </style>
 </head>
 <body>
@@ -171,7 +321,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
     <div id="login-tallas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;text-align:left">
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">CAMISETA</div>
-        <select id="login-camiseta" class="login-input" style="margin-bottom:0;padding:10px 12px">
+        <select id="login-camiseta" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;color:#f1f1f5;outline:none;margin-bottom:0">
           <option value="">-</option>
           <option>XS</option><option>S</option><option>M</option><option>L</option>
           <option>XL</option><option>XXL</option><option>XXXL</option>
@@ -179,7 +329,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">SUDADERA</div>
-        <select id="login-sudadera" class="login-input" style="margin-bottom:0;padding:10px 12px">
+        <select id="login-sudadera" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;color:#f1f1f5;outline:none;margin-bottom:0">
           <option value="">-</option>
           <option>XS</option><option>S</option><option>M</option><option>L</option>
           <option>XL</option><option>XXL</option><option>XXXL</option>
@@ -187,7 +337,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">PETO</div>
-        <select id="login-peto" class="login-input" style="margin-bottom:0;padding:10px 12px">
+        <select id="login-peto" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;color:#f1f1f5;outline:none;margin-bottom:0">
           <option value="">-</option>
           <option>XS</option><option>S</option><option>M</option><option>L</option>
           <option>XL</option><option>XXL</option><option>XXXL</option>
@@ -195,7 +345,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">CAZADORA</div>
-        <select id="login-cazadora" class="login-input" style="margin-bottom:0;padding:10px 12px">
+        <select id="login-cazadora" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;color:#f1f1f5;outline:none;margin-bottom:0">
           <option value="">-</option>
           <option>XS</option><option>S</option><option>M</option><option>L</option>
           <option>XL</option><option>XXL</option><option>XXXL</option>
@@ -203,7 +353,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">POLO</div>
-        <select id="login-polo" class="login-input" style="margin-bottom:0;padding:10px 12px">
+        <select id="login-polo" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;color:#f1f1f5;outline:none;margin-bottom:0">
           <option value="">-</option>
           <option>XS</option><option>S</option><option>M</option><option>L</option>
           <option>XL</option><option>XXL</option><option>XXXL</option>
@@ -227,9 +377,9 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
   <div class="card-a">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div class="stitle" style="margin-bottom:0">Pago de fiestas</div>
-      <div id="admin-precio-dia-wrap" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+      <div id="admin-precio-dia-wrap" style="display:none;align-items:center;gap:6px;font-size:12px;color:#6b6b80">
         💶 €/día: <input type="number" id="admin-precio-dia" value="20" min="1" step="1"
-          style="width:60px;padding:5px 8px;border:1.5px solid var(--ora-m);border-radius:var(--rs);font-size:13px;font-weight:700;color:var(--ora-dd);font-family:inherit;outline:none"
+          style="width:60px;padding:5px 8px;border:1.5px solid rgba(255,107,53,.25);border-radius:var(--rs);font-size:13px;font-weight:700;color:#ff8c5a;font-family:inherit;outline:none"
           oninput="precioDia=parseFloat(this.value)||20;document.getElementById('p-dias').dispatchEvent(new Event('input'))">
       </div>
     </div>
@@ -251,7 +401,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
           <option value="Octubre">🍂 Octubre</option>
         </select>
       </div>
-      <div class="fg"><label>Cantidad (€) <span style="font-size:10px;color:var(--ora-dd)">(20€/día)</span></label><input type="number" id="p-cantidad" placeholder="0.00" min="0" step="0.01" style="background:var(--ora-l)" readonly></div>
+      <div class="fg"><label>Cantidad (€) <span style="font-size:10px;color:#ff8c5a">(20€/día)</span></label><input type="number" id="p-cantidad" placeholder="0.00" min="0" step="0.01" style="background:rgba(255,107,53,.1)" readonly></div>
       <div class="fg"><label>¿Ha pagado?</label>
         <select id="p-pagado">
           <option value="no">❌ Pendiente</option>
@@ -264,7 +414,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="stitle" style="margin:0">Participantes (<span id="cnt-p">0</span>)</div>
-      <div style="font-size:12px;color:var(--muted)">Recaudado: <span id="p-total" style="font-weight:600;color:var(--ok)">0.00 €</span> · Pendiente: <span id="p-pendiente" style="font-weight:600;color:var(--mal)">0.00 €</span></div>
+      <div style="font-size:12px;color:#6b6b80">Recaudado: <span id="p-total" style="font-weight:600;color:var(--ok)">0.00 €</span> · Pendiente: <span id="p-pendiente" style="font-weight:600;color:var(--mal)">0.00 €</span></div>
     </div>
     <div id="lst-p"><div class="empty">No hay participantes todavía</div></div>
   </div>
@@ -272,10 +422,10 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 
 <div id="p-balance" class="panel">
   <!-- Sub-tabs -->
-  <div style="display:flex;gap:0;background:#fff;border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-    <button id="bal-tab-gastos" onclick="balTab('gastos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;">💶 Gastos</button>
-    <button id="bal-tab-ingresos" onclick="balTab('ingresos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">🐖 Ingresos</button>
-    <button id="bal-tab-resumen" onclick="balTab('resumen')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">📊 Resumen</button>
+  <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
+    <button id="bal-tab-gastos" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:linear-gradient(135deg,#ff4500,#ff6b35);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;">💶 Gastos</button>
+    <button id="bal-tab-ingresos" onclick="balTab('ingresos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">🐖 Ingresos</button>
+    <button id="bal-tab-resumen" onclick="balTab('resumen')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">📊 Resumen</button>
   </div>
 
   <!-- Gastos -->
@@ -364,7 +514,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
   <div id="lst-activa-card" class="card" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div class="stitle" id="l-titulo" style="margin:0"></div>
-      <span id="l-prog-lbl" style="font-size:12px;color:var(--ora-dd)"></span>
+      <span id="l-prog-lbl" style="font-size:12px;color:#ff8c5a"></span>
     </div>
     <div class="pbar"><div class="pfill" id="l-prog" style="width:0%"></div></div>
 
@@ -392,8 +542,8 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
         <div class="fg"><label>Importe total (€)</label><input type="number" id="l-importe" placeholder="0.00" min="0" step="0.01"></div>
         <button class="btn btn-p" onclick="pagarLista()" style="align-self:flex-end">✅ Marcar pagada</button>
       </div>
-      <div id="l-pagada-info" style="display:none;margin-top:8px;padding:10px 12px;background:var(--ok-bg);border-radius:var(--rs);font-size:13px;color:var(--ok);font-weight:500"></div>
-      <button id="l-editar-btn" onclick="editarListaPagada()" class="btn" style="display:none;margin-top:8px;font-size:13px;border-color:var(--ora-m);color:var(--ora-dd)">✏️ Editar precios</button>
+      <div id="l-pagada-info" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(16,185,129,.12);border-radius:10px;font-size:13px;color:#10b981;font-weight:500"></div>
+      <button id="l-editar-btn" onclick="editarListaPagada()" class="btn" style="display:none;margin-top:8px;font-size:13px;border-color:rgba(255,107,53,.25);color:#ff8c5a">✏️ Editar precios</button>
     </div>
 
     <!-- Foto del ticket -->
@@ -404,7 +554,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
           📷 Subir foto
         </label>
         <input type="file" id="ticket-input" accept="image/*" capture="environment" style="display:none" onchange="subirTicket(event)">
-        <span id="ticket-status" style="font-size:12px;color:var(--muted)"></span>
+        <span id="ticket-status" style="font-size:12px;color:#6b6b80"></span>
       </div>
       <div id="ticket-preview" style="margin-top:10px;display:none">
         <img id="ticket-img" style="max-width:100%;border-radius:var(--r);border:1px solid var(--borde);max-height:300px;object-fit:contain;" alt="Ticket">
@@ -429,7 +579,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
     <button onclick="exportarRopaExcel()" class="btn btn-p" style="flex:1;padding:13px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;">
       📥 Exportar tallas
     </button>
-    <button onclick="abrirPedido()" class="btn btn-p" style="flex:1;padding:13px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#2E7D32,#43A047);box-shadow:0 4px 12px rgba(46,125,50,.3)">
+    <button onclick="abrirPedido()" class="btn btn-p" style="flex:1;padding:13px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 12px rgba(16,185,129,.3)">
       🛍️ Hacer pedido
     </button>
   </div>
@@ -439,9 +589,9 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
 <div id="p-iban" class="panel">
 
   <!-- Sub-tabs -->
-  <div style="display:flex;gap:0;background:#fff;border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-    <button id="ext-tab-iban" onclick="extTab('iban')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;">🏦 IBAN</button>
-    <button id="ext-tab-spotify" onclick="extTab('spotify')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">🎵 Spotify</button>
+  <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
+    <button id="ext-tab-iban" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:linear-gradient(135deg,#ff4500,#ff6b35);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;">🏦 IBAN</button>
+    <button id="ext-tab-spotify" onclick="extTab('spotify')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">🎵 Spotify</button>
   </div>
 
   <!-- IBAN -->
@@ -450,12 +600,12 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
       <div class="stitle">Cuenta bancaria de la peña</div>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
         <img src="data:image/png;base64,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" alt="CaixaBank" style="width:56px;height:56px;border-radius:12px;flex-shrink:0;object-fit:contain">
-        <div><div style="font-size:13px;font-weight:600;color:var(--muted)">CaixaBank</div></div>
+        <div><div style="font-size:13px;font-weight:600;color:#6b6b80">CaixaBank</div></div>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Titular</div>
       <div style="font-size:15px;font-weight:600;color:var(--texto);margin-bottom:10px">Peña La Perjudicación</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">IBAN</div>
-      <div style="font-size:17px;font-weight:700;letter-spacing:.1em;font-family:monospace;color:var(--texto);background:var(--ora-l);border:1px solid var(--ora-m);border-radius:var(--rs);padding:13px 15px;word-break:break-all">ES08 2100 0926 0221 0069 6324</div>
+      <div style="font-size:17px;font-weight:700;letter-spacing:.1em;font-family:monospace;color:var(--texto);background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.25);border-radius:var(--rs);padding:13px 15px;word-break:break-all">ES08 2100 0926 0221 0069 6324</div>
       <button class="btn btn-p" onclick="copyIban()" style="margin-top:12px">📋 Copiar IBAN</button>
       <span id="copy-ok" style="font-size:12px;color:var(--ok);margin-left:10px;display:none">¡Copiado!</span>
     </div>
@@ -474,7 +624,7 @@ body{background:var(--gris);color:var(--texto);min-height:100vh;font-size:15px;}
         </svg>
         <span style="color:white;font-size:16px;font-weight:700;font-family:inherit">Abrir lista en Spotify</span>
       </a>
-      <div style="font-size:11px;color:var(--muted)">Se abrirá en la app de Spotify o en el navegador</div>
+      <div style="font-size:11px;color:#6b6b80">Se abrirá en la app de Spotify o en el navegador</div>
     </div>
   </div>
 
@@ -529,8 +679,8 @@ function extTab(t){
   ['iban','spotify'].forEach(function(b){
     var el = document.getElementById('ext-tab-'+b);
     if(!el) return;
-    if(b===t){el.style.background='linear-gradient(135deg,#E8510A,#FF7A3D)';el.style.color='#fff';}
-    else{el.style.background='#fff';el.style.color='var(--muted)';}
+    if(b===t){el.style.background='linear-gradient(135deg,#ff4500,#ff6b35)';el.style.color='#fff';el.style.borderColor='transparent';}
+    else{el.style.background='rgba(255,255,255,.05)';el.style.color='#6b6b80';el.style.borderColor='rgba(255,255,255,.1)';}
   });
 }
 
@@ -617,17 +767,17 @@ function editarListaPagada(){
       <input type="number" value="${it.precio||''}" placeholder="0.00" min="0" step="0.01"
         data-id="${it.id}"
         style="width:90px;padding:8px 10px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;text-align:right"
-        oninput="this.style.borderColor='var(--ora)'">
+        oninput="this.style.borderColor='#ff6b35'">
     </div>`).join('');
 
   const modal=document.createElement('div');
   modal.id='editar-precios-modal';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML=`
-    <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="background:var(--bg2);border-radius:20px;padding:24px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-size:16px;font-weight:700;color:var(--texto)">✏️ Editar precios</div>
-        <button onclick="document.getElementById('editar-precios-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">✕</button>
+        <div style="font-size:16px;font-weight:700;color:#f1f1f5">✏️ Editar precios</div>
+        <button onclick="document.getElementById('editar-precios-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b6b80">✕</button>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Actualiza los precios de cada artículo</div>
       <div id="editar-items-list">${items}</div>
@@ -849,10 +999,10 @@ function renderParticipantes(){
   S.participantes.forEach(p=>{const key=p.evento||'Sin evento';if(!eventos[key])eventos[key]=[];eventos[key].push(p);});
   el.innerHTML=Object.entries(eventos).map(([ev,parts])=>`
     <div style="margin-bottom:4px">
-      <div style="font-size:11px;font-weight:600;color:var(--ora-dd);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid var(--ora-m);margin-bottom:2px">${ev}</div>
+      <div style="font-size:11px;font-weight:600;color:#ff8c5a;text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid rgba(255,107,53,.25);margin-bottom:2px">${ev}</div>
       ${parts.map(p=>`<div class="li">
         ${(()=>{const t=tallasData[p.nombre];const foto=t&&t.foto?t.foto:localStorage.getItem('fotoPerfil_'+p.nombre);return foto?`<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(p.nombre)}</span></div>`:`<div class="av">${ini(p.nombre)}</div>`;})()}
-        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--muted)">${p.tipo==='invitado'?'🎟 Invitado · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div></div>
+        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:#6b6b80">${p.tipo==='invitado'?'🎟 Invitado · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div></div>
         <div class="ml">
           <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'};min-width:110px;">
             ${p.pagado==='si'?'✅ Pagado':'❌ Pendiente'}
@@ -902,7 +1052,7 @@ function renderGastos(){
     const delBtn=g.auto?'':(canDelete(g.createdBy)?`<button class="btn btn-sm btn-d" onclick="delGasto(${g.id})">✕</button>`:'');
     return `<div class="li">
       <div style="font-size:18px;flex-shrink:0">📤</div>
-      <div><div style="font-size:14px;font-weight:500">${g.concepto}${autoTag}</div><div style="font-size:12px;color:var(--muted)">${g.fecha} · ${pagNom} · ${g.categoria}</div></div>
+      <div><div style="font-size:14px;font-weight:500">${g.concepto}${autoTag}</div><div style="font-size:12px;color:#6b6b80">${g.fecha} · ${pagNom} · ${g.categoria}</div></div>
       <div class="ml"><span style="font-size:14px;font-weight:600;color:var(--mal)">-${fmt(g.importe)}</span>${delBtn}</div>
     </div>`;
   }).join('');
@@ -936,7 +1086,7 @@ function renderIngresos(){
     const delBtn=g.auto?'':(canDelete(g.createdBy)?`<button class="btn btn-sm btn-d" onclick="delIngreso(${g.id})">✕</button>`:'');
     return `<div class="li">
       <div style="font-size:18px;flex-shrink:0">📥</div>
-      <div><div style="font-size:14px;font-weight:500">${g.concepto}${autoTag}</div><div style="font-size:12px;color:var(--muted)">${g.fecha}${orig?' · '+orig.nombre:''} · ${g.tipo}</div></div>
+      <div><div style="font-size:14px;font-weight:500">${g.concepto}${autoTag}</div><div style="font-size:12px;color:#6b6b80">${g.fecha}${orig?' · '+orig.nombre:''} · ${g.tipo}</div></div>
       <div class="ml"><span style="font-size:14px;font-weight:600;color:var(--ok)">+${fmt(g.importe)}</span>${delBtn}</div>
     </div>`;
   }).join('');
@@ -950,8 +1100,8 @@ function balTab(t){
   ['gastos','ingresos','resumen'].forEach(b=>{
     const el=document.getElementById('bal-tab-'+b);
     if(!el)return;
-    if(b===t){el.style.background='linear-gradient(135deg,#E8510A,#FF7A3D)';el.style.color='#fff';}
-    else{el.style.background='#fff';el.style.color='var(--muted)';}
+    if(b===t){el.style.background='linear-gradient(135deg,#ff4500,#ff6b35)';el.style.color='#fff';el.style.borderColor='transparent';}
+    else{el.style.background='rgba(255,255,255,.05)';el.style.color='#6b6b80';el.style.borderColor='rgba(255,255,255,.1)';}
   });
   if(t==='resumen')renderResumen();
 }
@@ -973,7 +1123,7 @@ function renderResumen(){
   eI.textContent=fmt(tI);
   eG.textContent=fmt(tG);
   eS.textContent=(sal<0?'-':'')+fmt(Math.abs(sal));
-  eS.style.color=sal>=0?'var(--ora)':'var(--mal)';
+  eS.style.color=sal>=0?'#ff6b35':'var(--mal)';
 
   const be=document.getElementById('r-balance');
   if(!be)return;
@@ -993,7 +1143,7 @@ function renderResumen(){
       return `<div class="li">
         ${(()=>{const t=tallasData[p.nombre];const foto=t&&t.foto?t.foto:localStorage.getItem('fotoPerfil_'+p.nombre);return foto?`<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(p.nombre)}</span></div>`:`<div class="av">${ini(p.nombre)}</div>`;})()}
         <div><div style="font-size:14px;font-weight:600">${p.nombre}</div>
-        <div style="font-size:12px;color:var(--muted)">Aportado: ${fmt(aportado)} · Adelantado: ${fmt(adelantado)}</div></div>
+        <div style="font-size:12px;color:#6b6b80">Aportado: ${fmt(aportado)} · Adelantado: ${fmt(adelantado)}</div></div>
         <div class="ml">${badge}</div>
       </div>`;
     }).join('');
@@ -1005,7 +1155,7 @@ function renderResumen(){
   if(!movs.length){me.innerHTML='<div class="empty">Sin movimientos</div>';return;}
   me.innerHTML=movs.map(m=>`<div class="li">
     <div style="font-size:18px;flex-shrink:0">${m.tipo==='g'?'📤':'📥'}</div>
-    <div><div style="font-size:14px;font-weight:500">${m.concepto}</div><div style="font-size:12px;color:var(--muted)">${m.fecha}</div></div>
+    <div><div style="font-size:14px;font-weight:500">${m.concepto}</div><div style="font-size:12px;color:#6b6b80">${m.fecha}</div></div>
     <div class="ml" style="font-size:14px;font-weight:600;color:${m.tipo==='g'?'var(--mal)':'var(--ok)'}">${m.tipo==='g'?'-':'+'}${fmt(m.importe)}</div>
   </div>`).join('');
 }
@@ -1125,7 +1275,7 @@ function renderListaActiva(){
         '<span style="font-size:16px;flex-shrink:0;width:20px;text-align:center">'+(it.done?'✅':'⬜')+'</span>'}
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          ${it.qty?`<span style="font-size:13px;font-weight:700;color:var(--ora-dd)">${it.qty}</span>`:''}
+          ${it.qty?`<span style="font-size:13px;font-weight:700;color:#ff8c5a">${it.qty}</span>`:''}
           <span class="cin">${it.nombre}</span>
           ${it.tipo?`<span class="badge b-ora" style="font-size:11px">${it.tipo==='bebida'?'🍺':it.tipo==='comida'?'🍽':'📦'}</span>`:''}
           ${it.precio?`<span class="ciq">${fmt(it.precio)}</span>`:''}
@@ -1135,9 +1285,9 @@ function renderListaActiva(){
         </div>
       </div>
       ${!lst.pagadaPor&&canDelete(it.createdBy)?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
-      ${(isAdmin||!it.precio||it.precio<=0)?`<button class="btn btn-sm" onclick="editarPrecioItem(${lst.id},${it.id})" style="border-color:var(--ora-m);color:var(--ora-dd);font-size:11px;padding:5px 8px">💰 ${it.precio?'✏️':''} Precio</button>`:''}
+      ${(isAdmin||!it.precio||it.precio<=0)?`<button class="btn btn-sm" onclick="editarPrecioItem(${lst.id},${it.id})" style="border-color:rgba(255,107,53,.25);color:#ff8c5a;font-size:11px;padding:5px 8px">💰 ${it.precio?'✏️':''} Precio</button>`:''}
     </div>`).join('');
-    if(totalPrecio>0)el.innerHTML+=`<div style="text-align:right;font-size:13px;font-weight:600;color:var(--ora-dd);padding-top:8px;border-top:1px solid var(--borde);margin-top:4px">Total estimado: ${fmt(totalPrecio)}</div>`;
+    if(totalPrecio>0)el.innerHTML+=`<div style="text-align:right;font-size:13px;font-weight:600;color:#ff8c5a;padding-top:8px;border-top:1px solid var(--borde);margin-top:4px">Total estimado: ${fmt(totalPrecio)}</div>`;
   }
   const lpt=document.getElementById('l-pagador-txt');
   if(lpt&&!lpt.value&&currentUser)lpt.value=currentUser;
@@ -1426,16 +1576,16 @@ function renderPedido(){
     for(var pi=0;pi<prendasConTalla.length;pi++){
       var p = prendasConTalla[pi];
       var pd = pedidoData[nombre][p] || {checked:false,qty:1};
-      var bg = pd.checked ? 'var(--ora-l)' : 'var(--gris)';
-      var brd = pd.checked ? 'var(--ora-m)' : 'transparent';
+      var bg = pd.checked ? 'rgba(255,107,53,.1)' : 'rgba(255,255,255,.06)';
+      var brd = pd.checked ? 'rgba(255,107,53,.25)' : 'transparent';
       var op = pd.checked ? '1' : '0.4';
       var chk = pd.checked ? ' checked' : '';
       var dataAttrs = ' data-nombre="'+nombre+'" data-prenda="'+p+'"';
       prendasHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px;background:'+bg+';border-radius:var(--rs);border:1.5px solid '+brd+'">'
-        +(canEditPedido(nombre) ? '<input type="checkbox"'+chk+dataAttrs+' class="pedido-cb" style="width:16px;height:16px;accent-color:var(--ora);cursor:pointer;flex-shrink:0">' : '<input type="checkbox"'+chk+' disabled style="width:16px;height:16px;opacity:0.3;flex-shrink:0">')
+        +(canEditPedido(nombre) ? '<input type="checkbox"'+chk+dataAttrs+' class="pedido-cb" style="width:16px;height:16px;accent-color:#ff6b35;cursor:pointer;flex-shrink:0">' : '<input type="checkbox"'+chk+' disabled style="width:16px;height:16px;opacity:0.3;flex-shrink:0">')
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:13px;font-weight:600">'+emojis[p]+' '+icons[p]+'</div>'
-        +'<div style="font-size:11px;color:var(--muted)">Talla: '+t[p]+'</div>'
+        +'<div style="font-size:11px;color:#6b6b80">Talla: '+t[p]+'</div>'
         +'</div>'
         +(canEditPedido(nombre) ? '<input type="number" value="'+(pd.qty||1)+'" min="1" max="99"'+dataAttrs+' class="pedido-qty" style="width:46px;padding:4px 6px;border:1.5px solid var(--borde);border-radius:6px;font-size:13px;font-family:inherit;text-align:center;opacity:'+op+'">' : '<span style="width:46px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);flex-shrink:0">'+(pd.qty||1)+'</span>')
         +'</div>';
@@ -1443,7 +1593,7 @@ function renderPedido(){
     out += '<div style="border:1px solid var(--borde);border-radius:var(--r);padding:14px;margin-bottom:10px">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
       +'<div class="av" style="width:34px;height:34px;font-size:13px">'+nombre.charAt(0).toUpperCase()+'</div>'
-      +'<div style="font-size:15px;font-weight:700;color:var(--texto)">'+nombre+'</div>'+(canEditPedido(nombre)?'':'<span style="font-size:11px;color:var(--muted);background:var(--gris);border-radius:20px;padding:2px 8px;margin-left:6px">solo lectura</span>')
+      +'<div style="font-size:15px;font-weight:700;color:#f1f1f5">'+nombre+'</div>'+(canEditPedido(nombre)?'':'<span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px;margin-left:6px">solo lectura</span>')
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+prendasHtml+'</div>'
       +'</div>';
@@ -1674,21 +1824,21 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 
 
 <!-- Modal añadir persona externa -->
-<div id="externo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+<div id="externo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg2);border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 6px 20px rgba(0,0,0,.25)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <div style="font-size:16px;font-weight:700;color:var(--texto)">👕 Añadir tallas externas</div>
-      <button onclick="cerrarExterno()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
+      <div style="font-size:16px;font-weight:700;color:#f1f1f5">👕 Añadir tallas externas</div>
+      <button onclick="cerrarExterno()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b6b80">✕</button>
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Para familiares o personas sin acceso a la app</div>
     <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">NOMBRE</div>
-    <input id="externo-nombre" type="text" placeholder="Ej: Hijo de Paco" maxlength="30" style="width:100%;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;margin-bottom:14px">
+    <input id="externo-nombre" type="text" placeholder="Ej: Hijo de Paco" maxlength="30" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:#f1f1f5;margin-bottom:14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
-      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAMISETA</div><select id="externo-camiseta" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
-      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">SUDADERA</div><select id="externo-sudadera" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
-      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">PETO</div><select id="externo-peto" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
-      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAZADORA</div><select id="externo-cazadora" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
-      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">POLO</div><select id="externo-polo" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAMISETA</div><select id="externo-camiseta" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:#f1f1f5"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">SUDADERA</div><select id="externo-sudadera" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:#f1f1f5"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">PETO</div><select id="externo-peto" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:#f1f1f5"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAZADORA</div><select id="externo-cazadora" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:#f1f1f5"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
+      <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">POLO</div><select id="externo-polo" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:#f1f1f5"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
     </div>
     <button onclick="guardarExterno()" style="width:100%;padding:13px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(232,81,10,.3)">Guardar</button>
   </div>
@@ -1696,27 +1846,27 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 
 
 <!-- PEDIDO MODAL -->
-<div id="pedido-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
-  <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto">
+<div id="pedido-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998;backdrop-filter:blur(2px);align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:var(--bg2);border-radius:20px;padding:24px;width:100%;max-width:480px;box-shadow:0 6px 20px rgba(0,0,0,.25);margin:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div style="font-size:16px;font-weight:700;color:var(--texto)">🛍️ Pedido de ropa</div>
-      <button onclick="cerrarPedido()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">✕</button>
+      <div style="font-size:16px;font-weight:700;color:#f1f1f5">🛍️ Pedido de ropa</div>
+      <button onclick="cerrarPedido()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b6b80">✕</button>
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Marca lo que quieres pedir y la cantidad</div>
     <div id="pedido-lista"></div>
     <div style="display:flex;gap:10px;margin-top:18px">
-      <button onclick="exportarPedidoExcel()" style="flex:1;padding:12px;background:linear-gradient(135deg,#2E7D32,#43A047);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(46,125,50,.3)">📥 Exportar pedido</button>
+      <button onclick="exportarPedidoExcel()" style="flex:1;padding:12px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(16,185,129,.3)">📥 Exportar pedido</button>
       <button onclick="guardarPedido()" style="flex:1;padding:12px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(232,81,10,.3)">💾 Guardar pedido</button>
     </div>
   </div>
 </div>
 
 <!-- PERFIL MODAL -->
-<div id="perfil-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
-  <div style="background:#fff;border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto">
+<div id="perfil-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:var(--bg2);border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 6px 20px rgba(0,0,0,.25);margin:auto">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-size:16px;font-weight:700;color:var(--texto)">👤 Mi perfil</div>
+      <div style="font-size:16px;font-weight:700;color:#f1f1f5">👤 Mi perfil</div>
       <button onclick="cerrarPerfil()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:4px 8px">✕</button>
     </div>
 
@@ -1727,42 +1877,42 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
           <span id="perfil-avatar-inicial"></span>
           <img id="perfil-avatar-img" style="display:none;width:100%;height:100%;object-fit:cover;" alt="foto">
         </div>
-        <label for="foto-input" style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:var(--ora);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);border:2px solid #fff;font-size:14px">📷</label>
+        <label for="foto-input" style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:#ff6b35;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);border:2px solid #fff;font-size:14px">📷</label>
         <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="subirFotoPerfil(event)">
       </div>
       <div style="font-size:16px;font-weight:700;color:var(--texto);margin-top:10px" id="perfil-nombre-display"></div>
     </div>
 
     <!-- Tallas -->
-    <div style="font-size:12px;font-weight:700;color:var(--ora-dd);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Tallas de ropa</div>
+    <div style="font-size:12px;font-weight:700;color:#ff8c5a;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Tallas de ropa</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAMISETA</div>
-        <select id="perfil-camiseta" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+        <select id="perfil-camiseta" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;min-height:42px;color:#f1f1f5">
           <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">SUDADERA</div>
-        <select id="perfil-sudadera" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+        <select id="perfil-sudadera" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;min-height:42px;color:#f1f1f5">
           <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">PETO</div>
-        <select id="perfil-peto" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+        <select id="perfil-peto" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;min-height:42px;color:#f1f1f5">
           <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAZADORA</div>
-        <select id="perfil-cazadora" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+        <select id="perfil-cazadora" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;min-height:42px;color:#f1f1f5">
           <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">POLO</div>
-        <select id="perfil-polo" style="width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-height:42px">
+        <select id="perfil-polo" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;min-height:42px;color:#f1f1f5">
           <option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
         </select>
       </div>
@@ -1770,7 +1920,7 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 
     <!-- Buttons -->
     <button onclick="guardarPerfil()" style="width:100%;padding:13px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(232,81,10,.3);margin-bottom:10px;min-height:48px">💾 Guardar cambios</button>
-    <button onclick="cerrarSesion()" style="width:100%;padding:13px;background:#fff;color:var(--mal);border:1.5px solid #FFD0D0;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;min-height:48px">🚪 Cerrar sesión</button>
+    <button onclick="cerrarSesion()" style="width:100%;padding:13px;background:var(--bg2);color:var(--mal);border:1.5px solid #FFD0D0;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;min-height:48px">🚪 Cerrar sesión</button>
   </div>
 </div>
 
