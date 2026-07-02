@@ -412,9 +412,9 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 <div id="p-balance" class="panel">
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-    <button id="bal-tab-gastos" onclick="balTab('gastos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--ora-g);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;touch-action:manipulation;">Gastos</button>
-    <button id="bal-tab-ingresos" onclick="balTab('ingresos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">Ingresos</button>
-    <button id="bal-tab-resumen" onclick="balTab('resumen')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">Resumen</button>
+    <button id="bal-tab-gastos" onclick="balTab('gastos')" class="subtab active">Gastos</button>
+    <button id="bal-tab-ingresos" onclick="balTab('ingresos')" class="subtab">Ingresos</button>
+    <button id="bal-tab-resumen" onclick="balTab('resumen')" class="subtab">Resumen</button>
   </div>
 
   <!-- Gastos -->
@@ -579,8 +579,8 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-    <button id="ext-tab-iban" onclick="extTab('iban')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--ora-g);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;touch-action:manipulation;">IBAN</button>
-    <button id="ext-tab-spotify" onclick="extTab('spotify')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">Spotify</button>
+    <button id="ext-tab-iban" onclick="extTab('iban')" class="subtab active">IBAN</button>
+    <button id="ext-tab-spotify" onclick="extTab('spotify')" class="subtab">Spotify</button>
   </div>
 
   <!-- IBAN -->
