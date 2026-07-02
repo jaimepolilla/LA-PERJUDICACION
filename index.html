@@ -59,7 +59,7 @@ body{
   background:var(--bg);
   color:var(--texto);
   min-height:100vh;
-  padding-top:110px;
+  padding-top:56px;padding-bottom:68px;
 }
 input,select,button,textarea{font-family:inherit;}
 input:focus,select:focus{outline:2px solid var(--ora);outline-offset:0;}
@@ -71,20 +71,21 @@ input:focus,select:focus{outline:2px solid var(--ora);outline-offset:0;}
   padding:10px 16px;
   position:fixed;top:0;left:0;right:0;z-index:90;
   display:flex;align-items:center;justify-content:center;
-  height:58px;
-  box-shadow:0 1px 8px rgba(0,0,0,.06);
+  height:56px;
+  box-shadow:0 1px 6px rgba(0,0,0,.06);
 }
 .logo-pill img{height:34px;object-fit:contain;}
 
 /* ── NAV ─────────────────────────────────────────────── */
 .nav{
-  display:flex;overflow-x:auto;gap:0;
+  display:flex;gap:0;
   background:#ffffff;
-  border-bottom:1px solid var(--borde);
-  position:fixed;top:58px;left:0;right:0;z-index:89;
+  border-top:1px solid var(--borde);
+  position:fixed;bottom:0;left:0;right:0;z-index:89;
   scrollbar-width:none;
-  height:52px;
-  box-shadow:0 1px 6px rgba(0,0,0,.05);
+  height:60px;
+  box-shadow:0 -2px 12px rgba(0,0,0,.07);
+  padding-bottom:env(safe-area-inset-bottom);
 }
 .nav::-webkit-scrollbar{display:none;}
 .nav-btn{
@@ -93,7 +94,7 @@ input:focus,select:focus{outline:2px solid var(--ora);outline-offset:0;}
   color:var(--texto3);cursor:pointer;white-space:nowrap;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   transition:all .2s;letter-spacing:.01em;
-  min-height:52px;text-transform:uppercase;
+  min-height:60px;text-transform:uppercase;
   -webkit-tap-highlight-color:transparent;
   min-width:0;overflow:hidden;
 }
@@ -278,7 +279,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 </head>
 <body>
 
-<div class="header" style="justify-content:center;position:relative;">
+<div class="header" style="justify-content:center;">
   <div class="user-chip" id="user-chip" style="display:none" title="Mi perfil" onclick="abrirPerfil()"><span id="user-chip-name"></span></div>
   <div class="logo-pill">
     <img id="logoimg" alt="La Perjudicación">
