@@ -154,13 +154,15 @@ input:focus,select:focus{outline:2px solid var(--ora);outline-offset:0;}
   border:1.5px solid var(--borde);border-radius:var(--rs);
   background:#fff;color:var(--texto);
   cursor:pointer;transition:all .15s;
-  min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+  min-height:44px;min-width:44px;
+  display:inline-flex;align-items:center;justify-content:center;
   -webkit-tap-highlight-color:transparent;
+  user-select:none;-webkit-user-select:none;
 }
 .btn:hover{background:var(--bg3);border-color:#d0d4e8;}
 .btn:active{transform:scale(.97);}
 .btn-p{
-  background:var(--ora-g);color:#fff;border:none;
+  background:var(--ora-g)!important;color:#fff!important;border:none;
   box-shadow:0 3px 12px rgba(232,81,10,.25);
 }
 .btn-p:hover{box-shadow:0 5px 16px rgba(232,81,10,.35);transform:translateY(-1px);}
@@ -749,7 +751,7 @@ function editarListaPagada(){
 
   const modal=document.createElement('div');
   modal.id='editar-precios-modal';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML=`
     <div style="background:var(--bg2);border-radius:20px;padding:24px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -1801,7 +1803,7 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 
 
 <!-- Modal añadir persona externa -->
-<div id="externo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px">
+<div id="externo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--bg2);border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 6px 20px rgba(0,0,0,.25)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
       <div style="font-size:16px;font-weight:700;color:var(--texto)">Añadir tallas externas</div>
@@ -1823,7 +1825,7 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 
 
 <!-- PEDIDO MODAL -->
-<div id="pedido-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998;backdrop-filter:blur(2px);align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+<div id="pedido-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
   <div style="background:var(--bg2);border-radius:20px;padding:24px;width:100%;max-width:480px;box-shadow:0 6px 20px rgba(0,0,0,.25);margin:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div style="font-size:16px;font-weight:700;color:var(--texto)">🛍️ Pedido de ropa</div>
@@ -1839,7 +1841,7 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 </div>
 
 <!-- PERFIL MODAL -->
-<div id="perfil-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:998;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+<div id="perfil-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
   <div style="background:var(--bg2);border-radius:20px;padding:26px;width:100%;max-width:360px;box-shadow:0 6px 20px rgba(0,0,0,.25);margin:auto">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
