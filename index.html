@@ -59,7 +59,7 @@ body{
   background:var(--bg);
   color:var(--texto);
   min-height:100vh;
-  padding-top:56px;padding-bottom:68px;
+  padding-top:56px;padding-bottom:80px;
 }
 input,select,button,textarea{font-family:inherit;}
 input:focus,select:focus{outline:2px solid var(--ora);outline-offset:0;}
@@ -132,6 +132,12 @@ input:focus,select:focus{outline:2px solid var(--ora);outline-offset:0;}
 /* Icon helpers */
 .icon{display:inline-flex;align-items:center;gap:7px;}
 .nav-btn svg,.btn svg{flex-shrink:0;}
+/* Sub-tabs */
+.subtab-bar{display:flex;gap:0;background:#fff;border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm);}
+.subtab{flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;min-height:46px;touch-action:manipulation;transition:all .15s;border-right:1px solid var(--borde);}
+.subtab:last-child{border-right:none;}
+.subtab.active{background:var(--ora-g);color:#fff;}
+.subtab:hover:not(.active){background:var(--bg3);}
 
 /* ── FORMS ───────────────────────────────────────────── */
 .form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px;}
@@ -158,6 +164,8 @@ input:focus,select:focus{outline:2px solid var(--ora);outline-offset:0;}
   display:inline-flex;align-items:center;justify-content:center;
   -webkit-tap-highlight-color:transparent;
   user-select:none;-webkit-user-select:none;
+  touch-action:manipulation;
+  position:relative;z-index:1;
 }
 .btn:hover{background:var(--bg3);border-color:#d0d4e8;}
 .btn:active{transform:scale(.97);}
@@ -404,7 +412,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 <div id="p-balance" class="panel">
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-    <button id="bal-tab-gastos" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--ora-g);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;">Gastos</button>
+    <button id="bal-tab-gastos" onclick="balTab('gastos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--ora-g);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;touch-action:manipulation;">Gastos</button>
     <button id="bal-tab-ingresos" onclick="balTab('ingresos')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">Ingresos</button>
     <button id="bal-tab-resumen" onclick="balTab('resumen')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">Resumen</button>
   </div>
@@ -571,7 +579,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-    <button id="ext-tab-iban" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--ora-g);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;">IBAN</button>
+    <button id="ext-tab-iban" onclick="extTab('iban')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--ora-g);color:#fff;cursor:pointer;font-family:inherit;min-height:46px;touch-action:manipulation;">IBAN</button>
     <button id="ext-tab-spotify" onclick="extTab('spotify')" style="flex:1;padding:11px;font-size:13px;font-weight:600;border:none;background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;border-left:1px solid var(--borde);min-height:46px;">Spotify</button>
   </div>
 
@@ -658,8 +666,7 @@ function extTab(t){
   ['iban','spotify'].forEach(function(b){
     var el = document.getElementById('ext-tab-'+b);
     if(!el) return;
-    if(b===t){el.style.background='linear-gradient(135deg,#ff4500,#ff6b35)';el.style.color='#fff';el.style.borderColor='transparent';}
-    else{el.style.background='rgba(255,255,255,.05)';el.style.color='#6b6b80';el.style.borderColor='rgba(255,255,255,.1)';}
+    el.classList.toggle('active', b===t);
   });
 }
 
@@ -1079,8 +1086,7 @@ function balTab(t){
   ['gastos','ingresos','resumen'].forEach(b=>{
     const el=document.getElementById('bal-tab-'+b);
     if(!el)return;
-    if(b===t){el.style.background='linear-gradient(135deg,#ff4500,#ff6b35)';el.style.color='#fff';el.style.borderColor='transparent';}
-    else{el.style.background='rgba(255,255,255,.05)';el.style.color='#6b6b80';el.style.borderColor='rgba(255,255,255,.1)';}
+    el.classList.toggle('active', b===t);
   });
   if(t==='resumen')renderResumen();
 }
@@ -1142,6 +1148,7 @@ function renderResumen(){
 // ── COMPRAS / LISTAS ─────────────────────────────────────────
 function crearLista(){
   const n=document.getElementById('l-nom').value.trim();
+  alert('DEBUG: crearLista ejecutada. Nombre="'+n+'"');
   if(!n)return;
   const id=Date.now();
   S.listas.push({id,nombre:n,items:[],pagadaPor:null,importe:0,createdBy:currentUser});
