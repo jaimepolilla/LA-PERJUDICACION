@@ -913,8 +913,10 @@ function checkExistingUser(nombre){
 
 // ── PARTICIPANTES ────────────────────────────────────────────
 function addParticipante(){
+  console.log('addParticipante called');
   S._ts=Date.now();
   const n=document.getElementById('p-nom').value.trim();
+  console.log('nombre:', n);
   const tipo=document.getElementById('p-tipo').value;
   const dias=parseInt(document.getElementById('p-dias').value)||0;
   const c=parseFloat(document.getElementById('p-cantidad').value)||0;
@@ -1147,8 +1149,9 @@ function renderResumen(){
 
 // ── COMPRAS / LISTAS ─────────────────────────────────────────
 function crearLista(){
+  console.log('crearLista called');
   const n=document.getElementById('l-nom').value.trim();
-  alert('DEBUG: crearLista ejecutada. Nombre="'+n+'"');
+  console.log('nombre:', n);
   if(!n)return;
   const id=Date.now();
   S.listas.push({id,nombre:n,items:[],pagadaPor:null,importe:0,createdBy:currentUser});
