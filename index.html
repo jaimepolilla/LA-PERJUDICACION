@@ -499,6 +499,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
       <button class="btn btn-p" onclick="crearLista()">+ Crear</button>
     </div>
     <div class="pills" id="lst-pills"></div>
+    <button onclick="exportarCompras()" class="btn" style="width:100%;margin-top:8px;font-size:13px;color:var(--texto3)">Exportar compras realizadas</button>
   </div>
   <div id="lst-activa-card" class="card" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -990,7 +991,8 @@ function renderParticipantes(){
       <div style="font-size:11px;font-weight:600;color:var(--ora-dd);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid rgba(255,107,53,.25);margin-bottom:2px">${ev}</div>
       ${parts.map(p=>`<div class="li">
         ${(()=>{const t=tallasData[p.nombre];const foto=t&&t.foto?t.foto:localStorage.getItem('fotoPerfil_'+p.nombre);return foto?`<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(p.nombre)}</span></div>`:`<div class="av">${ini(p.nombre)}</div>`;})()}
-        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--texto3)">${p.tipo==='invitado'?'Invitado · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div></div>
+        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--texto3)">${p.tipo==='invitado'?'Invitado · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div>
+        ${p.tipo==='invitado'&&p.createdBy?`<div style="font-size:11px;color:var(--texto3);margin-top:2px">Añadido por ${p.createdBy}</div>`:''}</div>
         <div class="ml">
           <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'};min-width:110px;">
             ${p.pagado==='si'?'Pagado':'Pendiente'}
@@ -1148,6 +1150,43 @@ function renderResumen(){
 }
 
 // ── COMPRAS / LISTAS ─────────────────────────────────────────
+
+function exportarCompras(){
+  const listas = S.listas.filter(l => l.pagadaPor);
+  if(!listas.length){alert('No hay compras pagadas para exportar.');return;}
+
+  const rows = [];
+  rows.push(['Lista','Artículo','Cantidad','Tipo','Precio (€)','Añadido por','Fecha add','Pagado por','Fecha pago','Total lista (€)']);
+
+  listas.forEach(lst => {
+    if(!lst.items.length){
+      rows.push([lst.nombre,'—','','','','',lst.pagadaPor||'',lst.fechaPago||'',lst.importe||0]);
+      return;
+    }
+    lst.items.forEach((it,i) => {
+      rows.push([
+        i===0 ? lst.nombre : '',
+        it.nombre||'',
+        it.qty||'',
+        it.tipo||'',
+        it.precio||0,
+        it.createdBy||'',
+        it.fechaAdd||'',
+        i===0 ? (lst.pagadaPor||'') : '',
+        i===0 ? (lst.fechaPago||'') : '',
+        i===0 ? (lst.importe||0) : ''
+      ]);
+    });
+  });
+
+  let csv = '\uFEFF' + rows.map(r => r.join(';')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'compras_perjudicacion.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
 function crearLista(){
   console.log('crearLista called');
   const n=document.getElementById('l-nom').value.trim();
