@@ -369,7 +369,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
       <div id="admin-precio-dia-wrap" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--texto3)">
         💶 €/día: <input type="number" id="admin-precio-dia" value="20" min="1" step="1"
           style="width:60px;padding:5px 8px;border:1.5px solid rgba(255,107,53,.25);border-radius:var(--rs);font-size:13px;font-weight:700;color:var(--ora-dd);font-family:inherit;outline:none"
-          oninput="precioDia=parseFloat(this.value)||20;document.getElementById('p-dias').dispatchEvent(new Event('input'))">
+          oninput="precioDia=parseFloat(this.value)||20;const _lbl=document.getElementById('precio-dia-label');if(_lbl&&document.getElementById('p-edad').value!=='nino')_lbl.textContent=precioDia;document.getElementById('p-dias').dispatchEvent(new Event('input'))">
       </div>
     </div>
     <div class="form-row">
@@ -380,7 +380,13 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
           <option value="invitado">Invitado</option>
         </select>
       </div>
-      <div class="fg"><label>Días</label><input type="number" id="p-dias" placeholder="0" min="0" step="1" oninput="document.getElementById('p-cantidad').value=(parseFloat(this.value)||0)*precioDia"></div>
+      <div class="fg"><label>Edad</label>
+        <select id="p-edad" onchange="const _d=parseInt(document.getElementById('p-dias').value)||0;const _pr=this.value==='nino'?5:precioDia;document.getElementById('p-cantidad').value=_d*_pr;const _lbl=document.getElementById('precio-dia-label');if(_lbl)_lbl.textContent=_pr;">
+          <option value="adulto">Adulto</option>
+          <option value="nino">Niño</option>
+        </select>
+      </div>
+      <div class="fg"><label>Días</label><input type="number" id="p-dias" placeholder="0" min="0" step="1" oninput="const _edad=document.getElementById('p-edad')?document.getElementById('p-edad').value:'adulto';document.getElementById('p-cantidad').value=(parseFloat(this.value)||0)*(_edad==='nino'?5:precioDia)"></div>
     </div>
     <div class="form-row">
       <div class="fg"><label>Fiestas</label>
@@ -399,6 +405,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
       </div>
       <button class="btn btn-p" onclick="addParticipante()" style="align-self:flex-end">+ Añadir</button>
     </div>
+    <div id="p-error" style="display:none;color:var(--mal);font-size:13px;padding:8px 12px;background:var(--mal-bg);border-radius:var(--rs);margin-top:6px"></div>
   </div>
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -913,11 +920,18 @@ function checkExistingUser(nombre){
 }
 
 // ── PARTICIPANTES ────────────────────────────────────────────
+
+function mostrarErrorForm(id, msg){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>{ el.style.display='none'; }, 4000);
+}
+
 function addParticipante(){
-  console.log('addParticipante called');
   S._ts=Date.now();
   const n=document.getElementById('p-nom').value.trim();
-  console.log('nombre:', n);
   const tipo=document.getElementById('p-tipo').value;
   const dias=parseInt(document.getElementById('p-dias').value)||0;
   const c=parseFloat(document.getElementById('p-cantidad').value)||0;
@@ -928,22 +942,23 @@ function addParticipante(){
   if(tipo==='socio'){
     const yaExiste=S.participantes.some(p=>p.nombre.toLowerCase()===n.toLowerCase()&&p.evento===e&&p.tipo!=='invitado');
     if(yaExiste){
-      alert('⚠️ "'+n+'" ya está dado de alta en "'+e+'". Para añadir un acompañante selecciona tipo Invitado.');
+      mostrarErrorForm('p-error', '"'+n+'" ya está dado de alta en "'+e+'". Para añadir un acompañante selecciona tipo Invitado.');
       return;
     }
   }
   // Admin cannot add themselves as participant
   if(isAdmin && tipo==='socio' && n.toLowerCase()==='admin'){
-    alert('⚠️ El administrador no puede añadirse como participante.');
+    mostrarErrorForm('p-error', 'El administrador no puede añadirse como participante.');
     return;
   }
   // Only current user can add themselves as socio
   if(!isAdmin && tipo==='socio' && currentUser && n.toLowerCase()!==currentUser.toLowerCase()){
-    alert('⚠️ Solo puedes darte de alta a ti mismo como socio. Para añadir a otra persona selecciona tipo Invitado.');
+    mostrarErrorForm('p-error', 'Solo puedes darte de alta a ti mismo como Socio. Para otra persona selecciona Invitado.');
     return;
   }
   const id=Date.now();
-  S.participantes.push({id,nombre:n,tipo,dias,cantidad:c,evento:e,pagado:'no',createdBy:currentUser});
+  const edadPart = document.getElementById('p-edad') ? document.getElementById('p-edad').value : 'adulto';
+  S.participantes.push({id,nombre:n,tipo,edad:edadPart,dias,cantidad:c,evento:e,pagado:'no',createdBy:currentUser});
   if(pag==='si'){
     S.participantes[S.participantes.length-1].pagado='si';
     S.ingresos.push({id,auto:true,concepto:n+(e?' — '+e:''),importe:c,origenId:null,tipo:'cuota',fecha:hoy()});
@@ -953,6 +968,7 @@ function addParticipante(){
   document.getElementById('p-cantidad').value='';
   document.getElementById('p-pagado').value='no';
   document.getElementById('p-tipo').value='socio';
+  document.getElementById('p-edad').value='adulto';
   renderParticipantes();renderIngresos();updSelects();
 }
 
@@ -991,7 +1007,7 @@ function renderParticipantes(){
       <div style="font-size:11px;font-weight:600;color:var(--ora-dd);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid rgba(255,107,53,.25);margin-bottom:2px">${ev}</div>
       ${parts.map(p=>`<div class="li">
         ${(()=>{const t=tallasData[p.nombre];const foto=t&&t.foto?t.foto:localStorage.getItem('fotoPerfil_'+p.nombre);return foto?`<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(p.nombre)}</span></div>`:`<div class="av">${ini(p.nombre)}</div>`;})()}
-        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--texto3)">${p.tipo==='invitado'?'Invitado · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div>
+        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--texto3)">${p.tipo==='invitado'?'Invitado · ':''}${p.edad==='nino'?'Niño · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div>
         ${p.tipo==='invitado'&&p.createdBy?`<div style="font-size:11px;color:var(--texto3);margin-top:2px">Añadido por ${p.createdBy}</div>`:''}</div>
         <div class="ml">
           <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'};min-width:110px;">
@@ -1190,7 +1206,6 @@ function exportarCompras(){
 function crearLista(){
   console.log('crearLista called');
   const n=document.getElementById('l-nom').value.trim();
-  console.log('nombre:', n);
   if(!n)return;
   const id=Date.now();
   S.listas.push({id,nombre:n,items:[],pagadaPor:null,importe:0,createdBy:currentUser});
@@ -1371,7 +1386,7 @@ function renderRopa(){
         `<div class="av" style="${t.externo?'background:linear-gradient(135deg,#666,#999)':''}">${nombre.charAt(0).toUpperCase()}</div>`
       }
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px">${nombre}${t.externo?` <span class="badge b-gray" style="font-size:10px">externo</span>`:''}</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px">${nombre}${t.externo?` <span class="badge b-gray" style="font-size:10px">${t.edad==='nino'?'niño':'externo'}</span>`:''}</div>
         ${t.externo&&t.addedBy?`<div style="font-size:11px;color:var(--texto3);margin-bottom:4px">Añadido por ${t.addedBy}</div>`:''}
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           ${prendas.map(p=>t[p]&&p!=='externo'&&p!=='addedBy'?`<span class="badge b-ora">${icons[p]} ${p.charAt(0).toUpperCase()+p.slice(1)}: <strong>${t[p]}</strong></span>`:'').join('')}
@@ -1427,7 +1442,9 @@ function cerrarExterno(){document.getElementById('externo-modal').style.display=
 function guardarExterno(){
   const nombre=document.getElementById('externo-nombre').value.trim();
   if(!nombre){document.getElementById('externo-nombre').focus();return;}
-  const tallas={camiseta:document.getElementById('externo-camiseta').value,sudadera:document.getElementById('externo-sudadera').value,peto:document.getElementById('externo-peto').value,cazadora:document.getElementById('externo-cazadora').value,polo:document.getElementById('externo-polo').value,externo:true,addedBy:currentUser};
+  const edadEl = document.querySelector('input[name="externo-edad"]:checked');
+  const edad = edadEl ? edadEl.value : 'adulto';
+  const tallas={camiseta:document.getElementById('externo-camiseta').value,sudadera:document.getElementById('externo-sudadera').value,peto:document.getElementById('externo-peto').value,cazadora:document.getElementById('externo-cazadora').value,polo:document.getElementById('externo-polo').value,externo:true,edad:edad,addedBy:currentUser};
   tallasData[nombre]=tallas;saveTallas(nombre,tallas);cerrarExterno();renderRopa();showSync('Tallas guardadas');
 }
 
@@ -1818,6 +1835,9 @@ loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',f
 
 // ── DOMContentLoaded ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
+  // Set initial price label
+  const edadSel = document.getElementById('p-edad');
+  if(edadSel) edadSel.dispatchEvent(new Event('change'));
   const loginLogo=document.getElementById('login-logo');
   const mainLogo=document.getElementById('logoimg');
   if(loginLogo&&mainLogo)loginLogo.src=mainLogo.src;
