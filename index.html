@@ -1881,7 +1881,15 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Para familiares o personas sin acceso a la app</div>
     <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em">NOMBRE</div>
-    <input id="externo-nombre" type="text" placeholder="Ej: Hijo de Paco" maxlength="30" style="width:100%;padding:10px 12px;background:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:var(--texto);margin-bottom:14px">
+    <input id="externo-nombre" type="text" placeholder="Ej: Hijo de Paco" maxlength="30" style="width:100%;padding:10px 12px;background:#fff;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;color:var(--texto);margin-bottom:10px">
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;flex:1;padding:10px 14px;border:1.5px solid var(--borde);border-radius:var(--rs);font-weight:500">
+        <input type="radio" name="externo-edad" value="adulto" checked style="accent-color:var(--ora);width:16px;height:16px"> Adulto
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;flex:1;padding:10px 14px;border:1.5px solid var(--borde);border-radius:var(--rs);font-weight:500">
+        <input type="radio" name="externo-edad" value="nino" style="accent-color:var(--ora);width:16px;height:16px"> Niño
+      </label>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
       <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">CAMISETA</div><select id="externo-camiseta" style="width:100%;padding:9px 12px;background:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:var(--texto)"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
       <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px">SUDADERA</div><select id="externo-sudadera" style="width:100%;padding:9px 12px;background:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:14px;font-family:inherit;outline:none;color:var(--texto)"><option value="">-</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option></select></div>
