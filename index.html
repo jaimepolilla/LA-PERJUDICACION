@@ -358,6 +358,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
   <button class="nav-btn" onclick="tab('balance',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Balance</span></button>
   <button class="nav-btn" onclick="tab('compras',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span>Compras</span></button>
   <button class="nav-btn" onclick="tab('ropa',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg><span>Ropa</span></button>
+  <button class="nav-btn" onclick="tab('eventos',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Eventos</span></button>
   <button class="nav-btn" onclick="tab('iban',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg><span>Extras</span></button>
 </nav>
 
@@ -582,6 +583,90 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
   </div>
 </div>
 
+
+<!-- EVENTOS -->
+<div id="p-eventos" class="panel">
+  <!-- Crear evento -->
+  <div class="card-a">
+    <div class="stitle">Crear / Seleccionar evento</div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Nombre del evento</label>
+        <input type="text" id="ev-nombre" placeholder="Ej: Feria de Agosto">
+      </div>
+      <button class="btn btn-p" onclick="crearEvento()" style="align-self:flex-end">+ Crear</button>
+    </div>
+    <div class="form-row" style="flex-wrap:wrap;gap:8px;margin-top:4px" id="ev-pills-list"></div>
+  </div>
+
+  <!-- Detalle evento activo -->
+  <div id="ev-detalle-card" class="card" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <div class="stitle" style="margin:0" id="ev-detalle-nombre"></div>
+        <div style="font-size:12px;color:var(--texto3)" id="ev-detalle-fechas"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="abrirGestFechas()" style="font-size:12px;border-color:rgba(255,107,53,.25);color:var(--ora-dd)">📅 Fechas</button>
+        <button id="ev-del-btn" class="btn btn-sm btn-d" onclick="eliminarEventoActivo()" style="display:none">✕</button>
+      </div>
+    </div>
+
+    <!-- Apuntarse al evento -->
+    <div style="border-top:1px solid var(--borde2);padding-top:14px;margin-top:6px">
+      <div class="stitle">Apuntarse al evento</div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Tipo</label>
+          <select id="ev-tipo-asistente" onchange="evTipoChange()">
+            <option value="socio">Socio (yo)</option>
+            <option value="invitado">Invitado</option>
+          </select>
+        </div>
+        <div class="fg" id="ev-invitado-nombre-wrap" style="display:none">
+          <label>Nombre del invitado</label>
+          <input type="text" id="ev-invitado-nombre" placeholder="Nombre del invitado">
+        </div>
+      </div>
+
+      <!-- Selector de días -->
+      <div id="ev-dias-selector" style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">¿Qué días vas a cenar?</div>
+        <div id="ev-dias-checkboxes" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;padding:10px 14px;background:var(--ora-l);border:1.5px solid var(--ora-m);border-radius:var(--rs);color:var(--ora-dd)">
+          <input type="checkbox" id="ev-todos-dias" onchange="evToggleTodosDias()" style="accent-color:var(--ora);width:16px;height:16px"> Todos los días
+        </label>
+      </div>
+      <button class="btn btn-p" onclick="apuntarseEvento()" style="width:100%">✓ Apuntarme</button>
+      <div id="ev-error" style="display:none;color:var(--mal);font-size:13px;padding:8px 12px;background:var(--mal-bg);border-radius:var(--rs);margin-top:8px"></div>
+    </div>
+
+    <!-- Lista de asistentes -->
+    <div style="border-top:1px solid var(--borde2);padding-top:14px;margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="stitle" style="margin:0">Asistentes (<span id="ev-cnt-asistentes">0</span>)</div>
+      </div>
+      <div id="ev-lista-asistentes"><div class="empty">Nadie apuntado aún</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GESTIONAR FECHAS -->
+<div id="ev-fechas-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:998;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg2);border-radius:20px;padding:24px;width:100%;max-width:380px;max-height:85vh;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.25)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700;color:var(--texto)">📅 Fechas del evento</div>
+      <button onclick="cerrarGestFechas()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--texto3)">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Añade los días de cena del evento</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="date" id="ev-nueva-fecha" style="flex:1;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none" onchange="document.getElementById('ev-nueva-fecha').style.borderColor='var(--ora)'">
+      <button class="btn btn-p" onclick="agregarFechaEvento()">+ Añadir</button>
+    </div>
+    <div id="ev-fechas-lista" style="margin-bottom:16px"></div>
+    <button onclick="cerrarGestFechas()" style="width:100%;padding:13px;background:linear-gradient(135deg,#E8510A,#FF7A3D);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Guardar fechas</button>
+  </div>
+</div>
 <!-- IBAN -->
 <div id="p-iban" class="panel">
 
@@ -634,7 +719,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 
 
 <script>
-const S={participantes:[],gastos:[],ingresos:[],listas:[],listaActiva:null,_ts:null};
+const S={participantes:[],gastos:[],ingresos:[],listas:[],eventos:[],listaActiva:null,_ts:null};
 const ini=n=>n.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
 const fmt=n=>n.toFixed(2)+' €';
 const hoy=()=>new Date().toLocaleDateString('es-ES');
@@ -659,6 +744,7 @@ function tab(id,el){
     const fab=document.getElementById('fab-ropa');
     if(fab) fab.style.display='none';
   }
+  if(id==='eventos'){renderEventos();}
   if(id==='gastos'){
     const gp=document.getElementById('g-pag-txt');
     if(gp&&!gp.value&&currentUser) gp.value=currentUser;
@@ -1767,6 +1853,293 @@ function autoPurgeParticipantes(){
   if(S.participantes.length < antes) saveToFirebase();
 }
 
+
+// ── EVENTOS / FERIAS ─────────────────────────────────────────
+let eventoActivo = null;
+
+function crearEvento(){
+  const nombre = document.getElementById('ev-nombre').value.trim();
+  if(!nombre) return;
+  if(!S.eventos) S.eventos = [];
+  if(S.eventos.find(e=>e.nombre.toLowerCase()===nombre.toLowerCase())){
+    mostrarErrorEvento('Ya existe un evento con ese nombre.'); return;
+  }
+  const id = Date.now();
+  S.eventos.push({id, nombre, fechas:[], asistentes:[], createdBy:currentUser});
+  document.getElementById('ev-nombre').value='';
+  eventoActivo = id;
+  renderEventos();
+  saveToFirebase();
+}
+
+function selEvento(id){
+  eventoActivo = id;
+  renderEventos();
+}
+
+function eliminarEventoActivo(){
+  if(!eventoActivo) return;
+  if(!isAdmin){alert('Solo el administrador puede eliminar eventos.');return;}
+  if(!confirm('¿Eliminar este evento y todos sus asistentes?'))return;
+  S.eventos = S.eventos.filter(e=>e.id!==eventoActivo);
+  eventoActivo = S.eventos[0]?.id || null;
+  renderEventos();
+  saveToFirebase();
+}
+
+function evTipoChange(){
+  const tipo = document.getElementById('ev-tipo-asistente').value;
+  const wrap = document.getElementById('ev-invitado-nombre-wrap');
+  if(wrap) wrap.style.display = tipo==='invitado' ? 'flex' : 'none';
+}
+
+function evToggleTodosDias(){
+  const todos = document.getElementById('ev-todos-dias').checked;
+  document.querySelectorAll('.ev-dia-cb').forEach(cb=>{
+    cb.checked = todos;
+    cb.disabled = todos;
+  });
+}
+
+function renderDiasCheckboxes(evento){
+  const wrap = document.getElementById('ev-dias-checkboxes');
+  if(!wrap) return;
+  if(!evento.fechas || !evento.fechas.length){
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--texto3)">Sin fechas definidas — añade fechas primero con el botón 📅</div>';
+    return;
+  }
+  wrap.innerHTML = evento.fechas.map(f=>`
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;padding:8px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);background:#fff">
+      <input type="checkbox" class="ev-dia-cb" value="${f}" style="accent-color:var(--ora);width:15px;height:15px"> ${formatFecha(f)}
+    </label>`).join('');
+}
+
+function formatFecha(isoDate){
+  if(!isoDate) return '';
+  const [y,m,d] = isoDate.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function apuntarseEvento(){
+  if(!eventoActivo){ mostrarErrorEvento('Selecciona un evento primero.'); return; }
+  const ev = S.eventos.find(e=>e.id===eventoActivo);
+  if(!ev){ mostrarErrorEvento('Evento no encontrado.'); return; }
+
+  const tipo = document.getElementById('ev-tipo-asistente').value;
+  let nombre = '';
+  let addedBy = '';
+
+  if(tipo==='socio'){
+    if(!currentUser){ mostrarErrorEvento('Debes iniciar sesión para apuntarte como socio.'); return; }
+    nombre = currentUser;
+    // Check duplicate
+    if(ev.asistentes.find(a=>a.nombre.toLowerCase()===nombre.toLowerCase() && a.tipo==='socio')){
+      mostrarErrorEvento('Ya estás apuntado a este evento.'); return;
+    }
+  } else {
+    nombre = document.getElementById('ev-invitado-nombre').value.trim();
+    if(!nombre){ mostrarErrorEvento('Escribe el nombre del invitado.'); return; }
+    addedBy = currentUser || '';
+    if(ev.asistentes.find(a=>a.nombre.toLowerCase()===nombre.toLowerCase())){
+      mostrarErrorEvento(`"${nombre}" ya está apuntado a este evento.`); return;
+    }
+  }
+
+  // Recoger días
+  const todos = document.getElementById('ev-todos-dias').checked;
+  let diasCena = [];
+  if(todos){
+    diasCena = ev.fechas ? [...ev.fechas] : [];
+  } else {
+    document.querySelectorAll('.ev-dia-cb:checked').forEach(cb=>diasCena.push(cb.value));
+  }
+
+  if(!diasCena.length && ev.fechas && ev.fechas.length){
+    mostrarErrorEvento('Selecciona al menos un día de cena o marca "Todos los días".'); return;
+  }
+
+  ev.asistentes.push({
+    id: Date.now(),
+    nombre,
+    tipo,
+    addedBy,
+    dias: diasCena,
+    todos
+  });
+
+  // Reset form
+  if(tipo==='invitado') document.getElementById('ev-invitado-nombre').value='';
+  document.getElementById('ev-todos-dias').checked = false;
+  document.querySelectorAll('.ev-dia-cb').forEach(cb=>{ cb.checked=false; cb.disabled=false; });
+
+  document.getElementById('ev-error').style.display='none';
+  renderEventoDetalle(ev);
+  saveToFirebase();
+}
+
+function quitarAsistenteEvento(evId, asId){
+  const ev = S.eventos.find(e=>e.id===evId);
+  if(!ev) return;
+  const as = ev.asistentes.find(a=>a.id===asId);
+  if(!as) return;
+  // Can delete: own entry or admin
+  const puedeEliminar = isAdmin ||
+    (as.tipo==='socio' && currentUser && as.nombre.toLowerCase()===currentUser.toLowerCase()) ||
+    (as.tipo==='invitado' && currentUser && as.addedBy && as.addedBy.toLowerCase()===currentUser.toLowerCase());
+  if(!puedeEliminar){ alert('No puedes eliminar esta entrada.'); return; }
+  if(!confirm(`¿Quitar a "${as.nombre}" del evento?`)) return;
+  ev.asistentes = ev.asistentes.filter(a=>a.id!==asId);
+  renderEventoDetalle(ev);
+  saveToFirebase();
+}
+
+function mostrarErrorEvento(msg){
+  const el = document.getElementById('ev-error');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=>{ el.style.display='none'; }, 4000);
+}
+
+function renderEventos(){
+  if(!S.eventos) S.eventos = [];
+  const pills = document.getElementById('ev-pills-list');
+  if(pills){
+    pills.innerHTML = S.eventos.map(ev=>`
+      <button class="pill${ev.id===eventoActivo?' active':''}" onclick="selEvento(${ev.id})" style="font-size:12px">
+        📅 ${ev.nombre}
+      </button>`).join('') || '<div style="font-size:12px;color:var(--texto3)">No hay eventos. Crea uno arriba.</div>';
+  }
+
+  const detCard = document.getElementById('ev-detalle-card');
+  if(!eventoActivo || !S.eventos.find(e=>e.id===eventoActivo)){
+    if(detCard) detCard.style.display='none';
+    return;
+  }
+  if(detCard) detCard.style.display='block';
+  const ev = S.eventos.find(e=>e.id===eventoActivo);
+  if(!ev) return;
+  renderEventoDetalle(ev);
+}
+
+function renderEventoDetalle(ev){
+  const nomEl = document.getElementById('ev-detalle-nombre');
+  if(nomEl) nomEl.textContent = ev.nombre;
+
+  const fechasEl = document.getElementById('ev-detalle-fechas');
+  if(fechasEl){
+    if(ev.fechas && ev.fechas.length){
+      const sorted = [...ev.fechas].sort();
+      fechasEl.textContent = sorted.map(f=>formatFecha(f)).join(' · ');
+    } else {
+      fechasEl.textContent = 'Sin fechas — pulsa 📅 para añadir';
+    }
+  }
+
+  // Del button visibility
+  const delBtn = document.getElementById('ev-del-btn');
+  if(delBtn) delBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+
+  // Dias checkboxes
+  renderDiasCheckboxes(ev);
+
+  // Asistentes
+  const cnt = document.getElementById('ev-cnt-asistentes');
+  if(cnt) cnt.textContent = ev.asistentes ? ev.asistentes.length : 0;
+
+  const lista = document.getElementById('ev-lista-asistentes');
+  if(!lista) return;
+  if(!ev.asistentes || !ev.asistentes.length){
+    lista.innerHTML = '<div class="empty">Nadie apuntado aún</div>';
+    return;
+  }
+
+  lista.innerHTML = ev.asistentes.map(a=>{
+    const puedeEliminar = isAdmin ||
+      (a.tipo==='socio' && currentUser && a.nombre.toLowerCase()===currentUser.toLowerCase()) ||
+      (a.tipo==='invitado' && currentUser && a.addedBy && a.addedBy.toLowerCase()===currentUser.toLowerCase());
+    const diasTexto = a.todos ? 'Todos los días' :
+      (a.dias && a.dias.length ? a.dias.map(d=>formatFecha(d)).join(', ') : 'Sin días');
+    const foto = tallasData[a.nombre]?.foto || localStorage.getItem('fotoPerfil_'+a.nombre);
+    const avHtml = foto ?
+      `<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(a.nombre)}</span></div>` :
+      `<div class="av">${ini(a.nombre)}</div>`;
+    return `<div class="li">
+      ${avHtml}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600">${a.nombre}
+          ${a.tipo==='invitado'?'<span class="badge b-gray" style="font-size:10px;margin-left:4px">invitado</span>':''}
+        </div>
+        ${a.tipo==='invitado'&&a.addedBy?`<div style="font-size:11px;color:var(--texto3)">Añadido por ${a.addedBy}</div>`:''}
+        <div style="font-size:11px;color:var(--ora-dd);margin-top:2px">🍽 ${diasTexto}</div>
+      </div>
+      <div class="ml">
+        ${puedeEliminar?`<button class="btn btn-sm btn-d" onclick="quitarAsistenteEvento(${ev.id},${a.id})">✕</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── GESTIONAR FECHAS DEL EVENTO ───────────────────────────────
+function abrirGestFechas(){
+  document.getElementById('ev-fechas-modal').style.display='flex';
+  renderFechasList();
+}
+
+function cerrarGestFechas(){
+  document.getElementById('ev-fechas-modal').style.display='none';
+  // Re-render dias checkboxes
+  if(eventoActivo){
+    const ev = S.eventos.find(e=>e.id===eventoActivo);
+    if(ev) renderDiasCheckboxes(ev);
+    const sorted = ev&&ev.fechas?[...ev.fechas].sort():[];
+    const fechasEl = document.getElementById('ev-detalle-fechas');
+    if(fechasEl) fechasEl.textContent = sorted.length ? sorted.map(f=>formatFecha(f)).join(' · ') : 'Sin fechas — pulsa 📅 para añadir';
+    saveToFirebase();
+  }
+}
+
+function agregarFechaEvento(){
+  if(!eventoActivo) return;
+  const ev = S.eventos.find(e=>e.id===eventoActivo);
+  if(!ev) return;
+  const val = document.getElementById('ev-nueva-fecha').value;
+  if(!val) return;
+  if(!ev.fechas) ev.fechas = [];
+  if(ev.fechas.includes(val)){ alert('Esta fecha ya está añadida.'); return; }
+  ev.fechas.push(val);
+  ev.fechas.sort();
+  document.getElementById('ev-nueva-fecha').value='';
+  renderFechasList();
+}
+
+function eliminarFechaEvento(fecha){
+  if(!eventoActivo) return;
+  const ev = S.eventos.find(e=>e.id===eventoActivo);
+  if(!ev) return;
+  ev.fechas = ev.fechas.filter(f=>f!==fecha);
+  renderFechasList();
+}
+
+function renderFechasList(){
+  const ev = S.eventos && eventoActivo ? S.eventos.find(e=>e.id===eventoActivo) : null;
+  const lista = document.getElementById('ev-fechas-lista');
+  if(!lista) return;
+  if(!ev || !ev.fechas || !ev.fechas.length){
+    lista.innerHTML = '<div style="font-size:13px;color:var(--texto3);text-align:center;padding:12px">Sin fechas añadidas</div>';
+    return;
+  }
+  lista.innerHTML = ev.fechas.map(f=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--borde2)">
+      <span style="font-size:14px;font-weight:500">📅 ${formatFecha(f)}</span>
+      <button class="btn btn-sm btn-d" onclick="eliminarFechaEvento('${f}')">✕</button>
+    </div>`).join('');
+}
+
+document.addEventListener('click',e=>{
+  const m = document.getElementById('ev-fechas-modal');
+  if(m && e.target===m) cerrarGestFechas();
+});
 // ── FIREBASE SYNC ────────────────────────────────────────────
 const firebaseConfig={apiKey:"AIzaSyBkZcLoNXeQbqljlvg1mOWAxB4MaJ11c_o",authDomain:"la-perjudicacion.firebaseapp.com",projectId:"la-perjudicacion",storageBucket:"la-perjudicacion.firebasestorage.app",messagingSenderId:"108138964249",appId:"1:108138964249:web:c95c434607b0a4ad9b1188"};
 let db=null;let syncTimeout=null;let isRemoteUpdate=false;
@@ -1784,6 +2157,7 @@ function initFirebase(){
           S.gastos=data.gastos||[];
           S.ingresos=data.ingresos||[];
           S.listas=data.listas||[];
+          S.eventos=data.eventos||[];
           S._ts=data._ts;
           const active=document.querySelector('.panel.active');
           if(active){
@@ -1794,6 +2168,7 @@ function initFirebase(){
             if(id==='compras'){renderListas();}
             if(id==='balance'){renderGastos();renderIngresos();}
             if(id==='ropa'){renderRopa();}
+            if(id==='eventos'){renderEventos();}
           }
           renderResumen();
           autoPurgeParticipantes();
@@ -1812,7 +2187,7 @@ function saveToFirebase(){
   S._ts=Date.now(); // Set timestamp immediately to prevent snapshot overwrite
   clearTimeout(syncTimeout);
   syncTimeout=setTimeout(()=>{
-    db.collection('perjudicacion').doc('datos').set({participantes:S.participantes,gastos:S.gastos,ingresos:S.ingresos,listas:S.listas,_ts:S._ts})
+    db.collection('perjudicacion').doc('datos').set({participantes:S.participantes,gastos:S.gastos,ingresos:S.ingresos,listas:S.listas,eventos:S.eventos||[],_ts:S._ts})
       .then(()=>{showSync('Guardado');renderResumen();})
       .catch(()=>showSync('Error al guardar'));
   },800);
@@ -1822,7 +2197,7 @@ function showSync(msg){
   // Notifications disabled
 }
 
-const _origFns=['addParticipante','togglePago','delParticipante','addGasto','delGasto','addIngreso','delIngreso','crearLista','delLista','addItem','togItem','delItem','pagarLista','guardarExterno'];
+const _origFns=['addParticipante','togglePago','delParticipante','addGasto','delGasto','addIngreso','delIngreso','crearLista','delLista','addItem','togItem','delItem','pagarLista','guardarExterno','crearEvento','apuntarseEvento','quitarAsistenteEvento','eliminarEventoActivo','agregarFechaEvento','eliminarFechaEvento'];
 _origFns.forEach(fn=>{const orig=window[fn];if(orig)window[fn]=function(){orig.apply(this,arguments);saveToFirebase();};});
 
 function loadScript(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>showSync('⚠️ No se pudo cargar Firebase');document.head.appendChild(s);}
