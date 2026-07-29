@@ -507,7 +507,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
       <button class="btn btn-p" onclick="crearLista()">+ Crear</button>
     </div>
     <div class="pills" id="lst-pills"></div>
-    <button onclick="exportarCompras()" class="btn" style="width:100%;margin-top:8px;font-size:13px;color:var(--texto3)">Exportar compras realizadas</button>
+    <button onclick="exportarComprasExcel()" class="btn btn-p" style="width:100%;margin-top:8px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px">📊 Exportar compras a Excel</button>
   </div>
   <div id="lst-activa-card" class="card" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -517,18 +517,22 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <div class="pbar"><div class="pfill" id="l-prog" style="width:0%"></div></div>
 
     <!-- Añadir artículo -->
-    <div class="form-row" style="margin-bottom:11px">
+    <div class="form-row" style="margin-bottom:6px">
       <div class="fg"><label>Cantidad</label><input type="text" id="li-qty" placeholder="2 cajas"></div>
       <div class="fg"><label>Artículo</label><input type="text" id="li-nom" placeholder="Ej: Cerveza"></div>
       <div class="fg"><label>Tipo</label>
         <select id="li-tipo">
-          <option value="bebida">Bebida</option>
-          <option value="comida">Comida</option>
-          <option value="otro">Otro</option>
+          <option value="bebida">Bebida 🍺</option>
+          <option value="comida">Comida 🍽</option>
+          <option value="otro">Otro 📦</option>
         </select>
       </div>
       <div class="fg"><label>Precio (€)</label><input type="number" id="li-precio" placeholder="0.00" min="0" step="0.01"></div>
-      <button class="btn btn-p" onclick="addItem()" style="align-self:flex-end">+ Añadir</button>
+    </div>
+    <!-- Comentario -->
+    <div class="form-row" style="margin-bottom:11px;align-items:flex-end">
+      <div class="fg" style="flex:3"><label>Comentario <span style="font-weight:400;color:var(--muted)">(opcional — packs, marca, etc.)</span></label><input type="text" id="li-comentario" placeholder="Ej: Pack 24 latas, marca Estrella"></div>
+      <button class="btn btn-p" onclick="addItem()" style="align-self:flex-end;flex-shrink:0">+ Añadir</button>
     </div>
     <div id="lst-items"><div class="empty">Lista vacía</div></div>
 
@@ -1253,41 +1257,112 @@ function renderResumen(){
 
 // ── COMPRAS / LISTAS ─────────────────────────────────────────
 
-function exportarCompras(){
-  const listas = S.listas.filter(l => l.pagadaPor);
-  if(!listas.length){alert('No hay compras pagadas para exportar.');return;}
+function exportarComprasExcel(){
+  if(!S.listas.length){alert('No hay listas de compra para exportar.');return;}
 
-  const rows = [];
-  rows.push(['Lista','Artículo','Cantidad','Tipo','Precio (€)','Añadido por','Fecha add','Pagado por','Fecha pago','Total lista (€)']);
+  // Load SheetJS dynamically if needed
+  function doExport(){
+    const XLSX = window.XLSX;
+    const wb = XLSX.utils.book_new();
 
-  listas.forEach(lst => {
-    if(!lst.items.length){
-      rows.push([lst.nombre,'—','','','','',lst.pagadaPor||'',lst.fechaPago||'',lst.importe||0]);
-      return;
-    }
-    lst.items.forEach((it,i) => {
-      rows.push([
-        i===0 ? lst.nombre : '',
-        it.nombre||'',
-        it.qty||'',
-        it.tipo||'',
-        it.precio||0,
-        it.createdBy||'',
-        it.fechaAdd||'',
-        i===0 ? (lst.pagadaPor||'') : '',
-        i===0 ? (lst.fechaPago||'') : '',
-        i===0 ? (lst.importe||0) : ''
+    // ── Hoja 1: RESUMEN ────────────────────────────────────────
+    const resRows = [['Lista','Estado','Artículos','Total (€)','Pagado por','Fecha pago']];
+    S.listas.forEach(lst=>{
+      const total = lst.pagadaPor ? (lst.importe||0) : lst.items.reduce((a,i)=>a+(i.precio||0),0);
+      resRows.push([
+        lst.nombre,
+        lst.pagadaPor ? 'Pagada ✓' : 'Pendiente',
+        lst.items.length,
+        total,
+        lst.pagadaPor||'',
+        lst.fechaPago||''
       ]);
     });
-  });
+    // Totales
+    const totalPagado = S.listas.filter(l=>l.pagadaPor).reduce((a,l)=>a+(l.importe||0),0);
+    const totalPend   = S.listas.filter(l=>!l.pagadaPor).reduce((a,l)=>a+l.items.reduce((b,i)=>b+(i.precio||0),0),0);
+    resRows.push([]);
+    resRows.push(['','Total pagado','',totalPagado,'','']);
+    resRows.push(['','Total pendiente','',totalPend,'','']);
 
-  let csv = '\uFEFF' + rows.map(r => r.join(';')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'compras_perjudicacion.csv'; a.click();
-  URL.revokeObjectURL(url);
+    const wsRes = XLSX.utils.aoa_to_sheet(resRows);
+    wsRes['!cols'] = [{wch:22},{wch:14},{wch:10},{wch:12},{wch:18},{wch:12}];
+    // Header style via range
+    wsRes['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0},e:{r:resRows.length-1,c:5}});
+    XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
+
+    // ── Hoja 2: DETALLE ARTÍCULOS ──────────────────────────────
+    const detRows = [['Lista','Estado','Artículo','Cantidad','Tipo','Precio (€)','Comentario','Añadido por','Fecha','Pagado por','Fecha pago']];
+    S.listas.forEach(lst=>{
+      const estado = lst.pagadaPor ? 'Pagada' : 'Pendiente';
+      if(!lst.items.length){
+        detRows.push([lst.nombre,estado,'(sin artículos)','','','','','','',lst.pagadaPor||'',lst.fechaPago||'']);
+        return;
+      }
+      lst.items.forEach((it,i)=>{
+        detRows.push([
+          i===0 ? lst.nombre : '',
+          i===0 ? estado : '',
+          it.nombre||'',
+          it.qty||'',
+          it.tipo==='bebida'?'Bebida':it.tipo==='comida'?'Comida':'Otro',
+          it.precio||0,
+          it.comentario||'',
+          it.createdBy||'',
+          it.fechaAdd||'',
+          i===0 ? (lst.pagadaPor||'') : '',
+          i===0 ? (lst.fechaPago||'') : ''
+        ]);
+      });
+      // Subtotal por lista
+      const sub = lst.pagadaPor ? (lst.importe||0) : lst.items.reduce((a,i)=>a+(i.precio||0),0);
+      detRows.push(['','','','','','Subtotal: '+sub.toFixed(2)+' €','','','','','']);
+      detRows.push([]);
+    });
+
+    const wsDet = XLSX.utils.aoa_to_sheet(detRows);
+    wsDet['!cols'] = [{wch:22},{wch:10},{wch:22},{wch:10},{wch:8},{wch:10},{wch:28},{wch:16},{wch:10},{wch:16},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, wsDet, 'Detalle artículos');
+
+    // ── Hoja 3: POR TIPO ───────────────────────────────────────
+    const tipoMap = {bebida:{label:'Bebida 🍺',rows:[]},comida:{label:'Comida 🍽',rows:[]},otro:{label:'Otro 📦',rows:[]}};
+    S.listas.forEach(lst=>{
+      lst.items.forEach(it=>{
+        const t = tipoMap[it.tipo]||tipoMap.otro;
+        t.rows.push([lst.nombre,it.qty||'',it.nombre||'',it.comentario||'',it.precio||0,lst.pagadaPor?'Pagada':'Pendiente']);
+      });
+    });
+    const tipoRows = [];
+    Object.values(tipoMap).forEach(t=>{
+      if(!t.rows.length) return;
+      tipoRows.push([t.label]);
+      tipoRows.push(['Lista','Cantidad','Artículo','Comentario','Precio (€)','Estado']);
+      t.rows.forEach(r=>tipoRows.push(r));
+      tipoRows.push([]);
+    });
+    if(tipoRows.length){
+      const wsTipo = XLSX.utils.aoa_to_sheet(tipoRows);
+      wsTipo['!cols'] = [{wch:22},{wch:10},{wch:22},{wch:28},{wch:10},{wch:10}];
+      XLSX.utils.book_append_sheet(wb, wsTipo, 'Por tipo');
+    }
+
+    // Exportar
+    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g,'-');
+    XLSX.writeFile(wb, `compras_perjudicacion_${fecha}.xlsx`);
+  }
+
+  if(window.XLSX){
+    doExport();
+  } else {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = doExport;
+    s.onerror = ()=>alert('No se pudo cargar la librería de Excel. Comprueba la conexión.');
+    document.head.appendChild(s);
+  }
 }
+
+function exportarCompras(){exportarComprasExcel();}
 
 function crearLista(){
   console.log('crearLista called');
@@ -1323,11 +1398,13 @@ function addItem(){
   const n=document.getElementById('li-nom').value.trim();
   const tipo=document.getElementById('li-tipo').value;
   const pr=parseFloat(document.getElementById('li-precio').value)||0;
+  const comentario=document.getElementById('li-comentario').value.trim();
   if(!n)return;
-  lst.items.push({id:Date.now(),nombre:n,tipo,qty:q,precio:pr,done:false,createdBy:currentUser,fechaAdd:hoy()});
+  lst.items.push({id:Date.now(),nombre:n,tipo,qty:q,precio:pr,comentario,done:false,createdBy:currentUser,fechaAdd:hoy()});
   document.getElementById('li-nom').value='';
   document.getElementById('li-qty').value='';
   document.getElementById('li-precio').value='';
+  document.getElementById('li-comentario').value='';
   renderListaActiva();
 }
 
@@ -1409,6 +1486,7 @@ function renderListaActiva(){
           ${it.tipo?`<span class="badge b-ora" style="font-size:11px">${it.tipo==='bebida'?'🍺':it.tipo==='comida'?'🍽':'📦'}</span>`:''}
           ${it.precio?`<span class="ciq">${fmt(it.precio)}</span>`:''}
         </div>
+        ${it.comentario?`<div style="font-size:12px;color:var(--texto2);margin-top:2px;font-style:italic">💬 ${it.comentario}</div>`:''}
         <div style="font-size:11px;color:var(--muted);margin-top:2px">
           ${it.createdBy?''+it.createdBy:''}${it.fechaAdd?' · '+it.fechaAdd:''}
         </div>
