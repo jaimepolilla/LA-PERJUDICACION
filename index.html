@@ -1258,106 +1258,80 @@ function renderResumen(){
 // ── COMPRAS / LISTAS ─────────────────────────────────────────
 
 function exportarComprasExcel(){
-  if(!S.listas.length){alert('No hay listas de compra para exportar.');return;}
+  // Capturar datos en el momento del click (no en el callback async)
+  const listas = JSON.parse(JSON.stringify(S.listas || []));
+  if(!listas.length){alert('No hay listas de compra para exportar.');return;}
 
-  // Load SheetJS dynamically if needed
-  function doExport(){
-    const XLSX = window.XLSX;
-    const wb = XLSX.utils.book_new();
+  function construirYExportar(){
+    var XLS = window.XLSX;
+    if(!XLS){alert('Error cargando librería Excel. Inténtalo de nuevo.');return;}
+    var wb = XLS.utils.book_new();
 
-    // ── Hoja 1: RESUMEN ────────────────────────────────────────
-    const resRows = [['Lista','Estado','Artículos','Total (€)','Pagado por','Fecha pago']];
-    S.listas.forEach(lst=>{
-      const total = lst.pagadaPor ? (lst.importe||0) : lst.items.reduce((a,i)=>a+(i.precio||0),0);
+    // ── Hoja 1: TODOS LOS ARTÍCULOS ───────────────────────────
+    var artRows = [['Lista','Estado lista','Artículo','Cantidad','Tipo','Precio (€)','Comentario','Añadido por','Fecha']];
+    listas.forEach(function(lst){
+      var items = lst.items || [];
+      var estado = lst.pagadaPor ? 'Pagada' : 'Pendiente';
+      if(!items.length){
+        artRows.push([lst.nombre, estado, '(sin artículos)', '', '', '', '', '', '']);
+        return;
+      }
+      items.forEach(function(it, i){
+        artRows.push([
+          i===0 ? lst.nombre : '',
+          i===0 ? estado : '',
+          it.nombre || '',
+          it.qty || '',
+          it.tipo === 'bebida' ? 'Bebida' : it.tipo === 'comida' ? 'Comida' : 'Otro',
+          it.precio || 0,
+          it.comentario || '',
+          it.createdBy || '',
+          it.fechaAdd || ''
+        ]);
+      });
+      // Línea subtotal
+      var sub = items.reduce(function(a,i){return a+(i.precio||0);}, 0);
+      artRows.push(['', '', '— Subtotal lista: '+sub.toFixed(2)+' €', '', '', sub, '', '', '']);
+      artRows.push(['', '', '', '', '', '', '', '', '']);
+    });
+    var wsArt = XLS.utils.aoa_to_sheet(artRows);
+    wsArt['!cols'] = [{wch:22},{wch:12},{wch:24},{wch:10},{wch:8},{wch:10},{wch:28},{wch:16},{wch:10}];
+    XLS.utils.book_append_sheet(wb, wsArt, 'Artículos');
+
+    // ── Hoja 2: RESUMEN POR LISTA ─────────────────────────────
+    var resRows = [['Lista','Estado','Nº artículos','Total estimado (€)','Pagado por','Fecha pago','Importe pagado (€)']];
+    listas.forEach(function(lst){
+      var items = lst.items || [];
+      var totalEst = items.reduce(function(a,i){return a+(i.precio||0);}, 0);
       resRows.push([
         lst.nombre,
         lst.pagadaPor ? 'Pagada ✓' : 'Pendiente',
-        lst.items.length,
-        total,
-        lst.pagadaPor||'',
-        lst.fechaPago||''
+        items.length,
+        totalEst,
+        lst.pagadaPor || '',
+        lst.fechaPago || '',
+        lst.pagadaPor ? (lst.importe||0) : ''
       ]);
     });
-    // Totales
-    const totalPagado = S.listas.filter(l=>l.pagadaPor).reduce((a,l)=>a+(l.importe||0),0);
-    const totalPend   = S.listas.filter(l=>!l.pagadaPor).reduce((a,l)=>a+l.items.reduce((b,i)=>b+(i.precio||0),0),0);
-    resRows.push([]);
-    resRows.push(['','Total pagado','',totalPagado,'','']);
-    resRows.push(['','Total pendiente','',totalPend,'','']);
+    resRows.push(['', '', '', '', '', '', '']);
+    var sumEst   = listas.reduce(function(a,l){return a+(l.items||[]).reduce(function(b,i){return b+(i.precio||0);},0);}, 0);
+    var sumPag   = listas.filter(function(l){return l.pagadaPor;}).reduce(function(a,l){return a+(l.importe||0);}, 0);
+    resRows.push(['TOTAL', '', '', sumEst, '', '', sumPag]);
+    var wsRes = XLS.utils.aoa_to_sheet(resRows);
+    wsRes['!cols'] = [{wch:22},{wch:12},{wch:13},{wch:18},{wch:18},{wch:12},{wch:18}];
+    XLS.utils.book_append_sheet(wb, wsRes, 'Resumen');
 
-    const wsRes = XLSX.utils.aoa_to_sheet(resRows);
-    wsRes['!cols'] = [{wch:22},{wch:14},{wch:10},{wch:12},{wch:18},{wch:12}];
-    // Header style via range
-    wsRes['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0},e:{r:resRows.length-1,c:5}});
-    XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
-
-    // ── Hoja 2: DETALLE ARTÍCULOS ──────────────────────────────
-    const detRows = [['Lista','Estado','Artículo','Cantidad','Tipo','Precio (€)','Comentario','Añadido por','Fecha','Pagado por','Fecha pago']];
-    S.listas.forEach(lst=>{
-      const estado = lst.pagadaPor ? 'Pagada' : 'Pendiente';
-      if(!lst.items.length){
-        detRows.push([lst.nombre,estado,'(sin artículos)','','','','','','',lst.pagadaPor||'',lst.fechaPago||'']);
-        return;
-      }
-      lst.items.forEach((it,i)=>{
-        detRows.push([
-          i===0 ? lst.nombre : '',
-          i===0 ? estado : '',
-          it.nombre||'',
-          it.qty||'',
-          it.tipo==='bebida'?'Bebida':it.tipo==='comida'?'Comida':'Otro',
-          it.precio||0,
-          it.comentario||'',
-          it.createdBy||'',
-          it.fechaAdd||'',
-          i===0 ? (lst.pagadaPor||'') : '',
-          i===0 ? (lst.fechaPago||'') : ''
-        ]);
-      });
-      // Subtotal por lista
-      const sub = lst.pagadaPor ? (lst.importe||0) : lst.items.reduce((a,i)=>a+(i.precio||0),0);
-      detRows.push(['','','','','','Subtotal: '+sub.toFixed(2)+' €','','','','','']);
-      detRows.push([]);
-    });
-
-    const wsDet = XLSX.utils.aoa_to_sheet(detRows);
-    wsDet['!cols'] = [{wch:22},{wch:10},{wch:22},{wch:10},{wch:8},{wch:10},{wch:28},{wch:16},{wch:10},{wch:16},{wch:10}];
-    XLSX.utils.book_append_sheet(wb, wsDet, 'Detalle artículos');
-
-    // ── Hoja 3: POR TIPO ───────────────────────────────────────
-    const tipoMap = {bebida:{label:'Bebida 🍺',rows:[]},comida:{label:'Comida 🍽',rows:[]},otro:{label:'Otro 📦',rows:[]}};
-    S.listas.forEach(lst=>{
-      lst.items.forEach(it=>{
-        const t = tipoMap[it.tipo]||tipoMap.otro;
-        t.rows.push([lst.nombre,it.qty||'',it.nombre||'',it.comentario||'',it.precio||0,lst.pagadaPor?'Pagada':'Pendiente']);
-      });
-    });
-    const tipoRows = [];
-    Object.values(tipoMap).forEach(t=>{
-      if(!t.rows.length) return;
-      tipoRows.push([t.label]);
-      tipoRows.push(['Lista','Cantidad','Artículo','Comentario','Precio (€)','Estado']);
-      t.rows.forEach(r=>tipoRows.push(r));
-      tipoRows.push([]);
-    });
-    if(tipoRows.length){
-      const wsTipo = XLSX.utils.aoa_to_sheet(tipoRows);
-      wsTipo['!cols'] = [{wch:22},{wch:10},{wch:22},{wch:28},{wch:10},{wch:10}];
-      XLSX.utils.book_append_sheet(wb, wsTipo, 'Por tipo');
-    }
-
-    // Exportar
-    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g,'-');
-    XLSX.writeFile(wb, `compras_perjudicacion_${fecha}.xlsx`);
+    var fecha = new Date().toLocaleDateString('es-ES').replace(/\//g,'-');
+    XLS.writeFile(wb, 'compras_perjudicacion_'+fecha+'.xlsx');
   }
 
   if(window.XLSX){
-    doExport();
+    construirYExportar();
   } else {
-    const s = document.createElement('script');
+    var s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = doExport;
-    s.onerror = ()=>alert('No se pudo cargar la librería de Excel. Comprueba la conexión.');
+    s.onload = construirYExportar;
+    s.onerror = function(){alert('No se pudo cargar la librería Excel. Comprueba la conexión a internet.');};
     document.head.appendChild(s);
   }
 }
