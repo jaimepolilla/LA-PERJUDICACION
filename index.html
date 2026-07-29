@@ -518,7 +518,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 
     <!-- Añadir artículo -->
     <div class="form-row" style="margin-bottom:6px">
-      <div class="fg"><label>Cantidad</label><input type="text" id="li-qty" placeholder="2 cajas"></div>
+      <div class="fg" style="flex:0 0 70px"><label>Uds.</label><input type="number" id="li-uds" placeholder="1" min="1" step="1" value="1" style="text-align:center"></div>
       <div class="fg"><label>Artículo</label><input type="text" id="li-nom" placeholder="Ej: Cerveza"></div>
       <div class="fg"><label>Tipo</label>
         <select id="li-tipo">
@@ -527,7 +527,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
           <option value="otro">Otro 📦</option>
         </select>
       </div>
-      <div class="fg"><label>Precio (€)</label><input type="number" id="li-precio" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg" style="flex:0 0 100px"><label>Precio ud. (€)</label><input type="number" id="li-precio" placeholder="0.00" min="0" step="0.01"></div>
     </div>
     <!-- Comentario -->
     <div class="form-row" style="margin-bottom:11px;align-items:flex-end">
@@ -828,18 +828,37 @@ function copyIban(){
 
 
 
-function editarPrecioItem(lstId, itemId){
-  const lst=S.listas.find(l=>l.id===lstId);
-  if(!lst)return;
-  const it=lst.items.find(i=>i.id===itemId);
-  if(!it)return;
-  const precio=prompt(`Precio de "${it.nombre}" (€):`, it.precio||'');
-  if(precio===null)return;
-  const val=parseFloat(precio)||0;
-  it.precio=val;
+function toggleEdicionItem(itemId){
+  const el = document.getElementById('edit-'+itemId);
+  if(!el) return;
+  const visible = el.style.display !== 'none';
+  document.querySelectorAll('[id^="edit-"]').forEach(e=>e.style.display='none');
+  el.style.display = visible ? 'none' : 'flex';
+  if(!visible) document.getElementById('en-'+itemId)?.focus();
+}
+function cancelarEdicionItem(itemId){
+  const el = document.getElementById('edit-'+itemId);
+  if(el) el.style.display='none';
+}
+function guardarEdicionItem(lstId, itemId){
+  const lst = S.listas.find(l=>l.id===lstId);
+  if(!lst) return;
+  const it = lst.items.find(i=>i.id===itemId);
+  if(!it) return;
+  const uds  = parseInt(document.getElementById('eu-'+itemId)?.value)||1;
+  const nom  = document.getElementById('en-'+itemId)?.value.trim()||it.nombre;
+  const prUd = parseFloat(document.getElementById('ep-'+itemId)?.value)||0;
+  const com  = document.getElementById('ec-'+itemId)?.value.trim()||'';
+  it.uds = uds;
+  it.qty = uds>1 ? uds+'x' : '';
+  it.nombre = nom;
+  it.precioUd = prUd;
+  it.precio = parseFloat((prUd*uds).toFixed(2));
+  it.comentario = com;
   renderListaActiva();
   saveToFirebase();
 }
+function editarPrecioItem(lstId, itemId){ toggleEdicionItem(itemId); }
 
 function editarListaPagada(){
   const lst=S.listas.find(l=>l.id===S.listaActiva);
@@ -1268,7 +1287,7 @@ function exportarComprasExcel(){
     var wb = XLS.utils.book_new();
 
     // ── Hoja 1: TODOS LOS ARTÍCULOS ───────────────────────────
-    var artRows = [['Lista','Estado lista','Artículo','Cantidad','Tipo','Precio (€)','Comentario','Añadido por','Fecha']];
+    var artRows = [['Lista','Estado lista','Artículo','Uds.','Tipo','Precio ud. (€)','Total artículo (€)','Comentario','Añadido por','Fecha']];
     listas.forEach(function(lst){
       var items = lst.items || [];
       var estado = lst.pagadaPor ? 'Pagada' : 'Pendiente';
@@ -1281,8 +1300,9 @@ function exportarComprasExcel(){
           i===0 ? lst.nombre : '',
           i===0 ? estado : '',
           it.nombre || '',
-          it.qty || '',
+          it.uds || 1,
           it.tipo === 'bebida' ? 'Bebida' : it.tipo === 'comida' ? 'Comida' : 'Otro',
+          it.precioUd != null ? it.precioUd : (it.precio || 0),
           it.precio || 0,
           it.comentario || '',
           it.createdBy || '',
@@ -1368,15 +1388,15 @@ function addItem(){
   if(!lst)return;
   if(lst.pagadaPor){alert('Esta lista ya está marcada como pagada.');return;}
   S._ts=Date.now(); // Prevent Firebase snapshot from overwriting
-  const q=document.getElementById('li-qty').value.trim();
+  const uds=parseInt(document.getElementById('li-uds').value)||1;
   const n=document.getElementById('li-nom').value.trim();
   const tipo=document.getElementById('li-tipo').value;
   const pr=parseFloat(document.getElementById('li-precio').value)||0;
   const comentario=document.getElementById('li-comentario').value.trim();
   if(!n)return;
-  lst.items.push({id:Date.now(),nombre:n,tipo,qty:q,precio:pr,comentario,done:false,createdBy:currentUser,fechaAdd:hoy()});
+  lst.items.push({id:Date.now(),nombre:n,tipo,uds,qty:uds>1?uds+'x':'',precioUd:pr,precio:parseFloat((pr*uds).toFixed(2)),comentario,done:false,createdBy:currentUser,fechaAdd:hoy()});
   document.getElementById('li-nom').value='';
-  document.getElementById('li-qty').value='';
+  document.getElementById('li-uds').value='1';
   document.getElementById('li-precio').value='';
   document.getElementById('li-comentario').value='';
   renderListaActiva();
@@ -1450,25 +1470,52 @@ function renderListaActiva(){
   const totalPrecio=lst.items.reduce((a,i)=>a+(i.precio||0),0);
   if(!lst.items.length){el.innerHTML='<div class="empty">Lista vacía</div>';}
   else{
-    el.innerHTML=lst.items.map(it=>`<div class="ci${it.done?' done':''}">
+    el.innerHTML=lst.items.map(it=>{
+      const uds = it.uds||1;
+      const precioUd = it.precioUd!=null ? it.precioUd : (it.precio||0);
+      const precioTotal = parseFloat((precioUd*uds).toFixed(2));
+      return `<div class="ci${it.done?' done':''}" id="item-row-${it.id}">
       ${!lst.pagadaPor?`<input type="checkbox" ${it.done?'checked':''} onchange="togItem(${lst.id},${it.id})">`:
         '<span style="font-size:16px;flex-shrink:0;width:20px;text-align:center">'+(it.done?'✅':'⬜')+'</span>'}
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          ${it.qty?`<span style="font-size:13px;font-weight:700;color:var(--ora-dd)">${it.qty}</span>`:''}
+          <span style="font-size:13px;font-weight:700;color:var(--ora-dd)">${uds}x</span>
           <span class="cin">${it.nombre}</span>
           ${it.tipo?`<span class="badge b-ora" style="font-size:11px">${it.tipo==='bebida'?'🍺':it.tipo==='comida'?'🍽':'📦'}</span>`:''}
-          ${it.precio?`<span class="ciq">${fmt(it.precio)}</span>`:''}
+          ${precioTotal>0?`<span class="ciq">${fmt(precioTotal)}</span>`:''}
+          ${uds>1&&precioUd>0?`<span style="font-size:11px;color:var(--muted)">(${fmt(precioUd)}/ud.)</span>`:''}
         </div>
         ${it.comentario?`<div style="font-size:12px;color:var(--texto2);margin-top:2px;font-style:italic">💬 ${it.comentario}</div>`:''}
+        <!-- Edición inline -->
+        <div id="edit-${it.id}" style="display:none;margin-top:8px;padding:10px;background:var(--bg3,var(--bg));border:1.5px solid var(--ora-m);border-radius:var(--rs);gap:8px;flex-wrap:wrap" class="form-row">
+          <div class="fg" style="flex:0 0 65px"><label style="font-size:11px">Uds.</label>
+            <input type="number" id="eu-${it.id}" value="${uds}" min="1" step="1" style="text-align:center;padding:6px 8px;font-size:13px">
+          </div>
+          <div class="fg"><label style="font-size:11px">Artículo</label>
+            <input type="text" id="en-${it.id}" value="${it.nombre||''}">
+          </div>
+          <div class="fg" style="flex:0 0 95px"><label style="font-size:11px">Precio ud. (€)</label>
+            <input type="number" id="ep-${it.id}" value="${precioUd||''}" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div class="fg" style="flex:2"><label style="font-size:11px">Comentario</label>
+            <input type="text" id="ec-${it.id}" value="${it.comentario||''}" placeholder="Pack, marca...">
+          </div>
+          <div style="display:flex;gap:6px;align-self:flex-end">
+            <button class="btn btn-p btn-sm" onclick="guardarEdicionItem(${lst.id},${it.id})">✓ Ok</button>
+            <button class="btn btn-sm" onclick="cancelarEdicionItem(${it.id})">✕</button>
+          </div>
+        </div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">
           ${it.createdBy?''+it.createdBy:''}${it.fechaAdd?' · '+it.fechaAdd:''}
         </div>
       </div>
-      ${!lst.pagadaPor&&canDelete(it.createdBy)?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
-      ${(isAdmin||!it.precio||it.precio<=0)?`<button class="btn btn-sm" onclick="editarPrecioItem(${lst.id},${it.id})" style="border-color:rgba(255,107,53,.25);color:var(--ora-dd);font-size:11px;padding:5px 8px">💰 ${it.precio?'✏️':''} Precio</button>`:''}
-    </div>`).join('');
-    if(totalPrecio>0)el.innerHTML+=`<div style="text-align:right;font-size:13px;font-weight:600;color:var(--ora-dd);padding-top:8px;border-top:1px solid var(--borde);margin-top:4px">Total estimado: ${fmt(totalPrecio)}</div>`;
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <button class="btn btn-sm" onclick="toggleEdicionItem(${it.id})" style="border-color:rgba(255,107,53,.25);color:var(--ora-dd);font-size:11px;padding:5px 9px">✏️ Editar</button>
+        ${!lst.pagadaPor&&canDelete(it.createdBy)?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
+      </div>
+    </div>`;
+    }).join('');
+    if(totalPrecio>0) el.innerHTML+=`<div style="text-align:right;font-size:13px;font-weight:600;color:var(--ora-dd);padding-top:8px;border-top:1px solid var(--borde);margin-top:4px">Total estimado: ${fmt(totalPrecio)}</div>`;
   }
   const lpt=document.getElementById('l-pagador-txt');
   if(lpt&&!lpt.value&&currentUser)lpt.value=currentUser;
