@@ -554,10 +554,9 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <div style="border-top:1px solid var(--borde);margin-top:14px;padding-top:14px">
       <div class="stitle">📷 Fotos del ticket</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
-        <label for="ticket-input" class="btn btn-p" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+        <button onclick="abrirSelectorFoto()" class="btn btn-p" style="display:inline-flex;align-items:center;gap:6px;">
           + Añadir foto
-        </label>
-        <input type="file" id="ticket-input" accept="image/*" style="display:none" onchange="subirTicket(event)">
+        </button>
         <span id="ticket-status" style="font-size:12px;color:var(--texto3)"></span>
       </div>
       <div id="ticket-preview" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px"></div>
@@ -1537,51 +1536,49 @@ function renderListaActiva(){
     if(editarBtn) editarBtn.style.display='none';
   }
   renderTickets(lst.fotos||(lst.ticket?[lst.ticket]:[]));
-  const ti=document.getElementById('ticket-input');if(ti)ti.value='';
 }
 
 // ── TICKET ───────────────────────────────────────────────────
-function subirTicket(event){
-  const file=event.target.files[0];if(!file)return;
-  const statusEl=document.getElementById('ticket-status');
-  statusEl.textContent='Procesando...';
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const img=new Image();
-    img.onload=function(){
-      const canvas=document.createElement('canvas');
-      const MAX=1200;
-      let w=img.width,h=img.height;
-      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
-      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
-      canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      const b64=canvas.toDataURL('image/jpeg',0.75);
-      const lst=S.listas.find(l=>l.id===S.listaActiva);
-      if(lst){
-        if(!lst.fotos) lst.fotos=lst.ticket?[lst.ticket]:[];
-        lst.fotos.push(b64);
-        lst.ticket=null;
-        renderTickets(lst.fotos);
-        statusEl.textContent='Foto guardada';
-        saveToFirebase();
-        setTimeout(()=>{statusEl.textContent='';},2000);
-      }
-      // Recreate input so iOS allows selecting again
-      const old=document.getElementById('ticket-input');
-      if(old){
-        const nuevo=document.createElement('input');
-        nuevo.type='file';
-        nuevo.id='ticket-input';
-        nuevo.accept='image/*';
-        nuevo.style.display='none';
-        nuevo.onchange=subirTicket;
-        old.parentNode.replaceChild(nuevo,old);
-      }
+function abrirSelectorFoto(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='image/*';
+  input.style.display='none';
+  input.onchange=function(event){
+    const file=event.target.files[0];
+    if(!file){document.body.removeChild(input);return;}
+    const statusEl=document.getElementById('ticket-status');
+    statusEl.textContent='Procesando...';
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const img=new Image();
+      img.onload=function(){
+        const canvas=document.createElement('canvas');
+        const MAX=1200;
+        let w=img.width,h=img.height;
+        if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+        if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const b64=canvas.toDataURL('image/jpeg',0.75);
+        const lst=S.listas.find(l=>l.id===S.listaActiva);
+        if(lst){
+          if(!lst.fotos) lst.fotos=lst.ticket?[lst.ticket]:[];
+          lst.fotos.push(b64);
+          lst.ticket=null;
+          renderTickets(lst.fotos);
+          statusEl.textContent='Foto guardada ✓';
+          saveToFirebase();
+          setTimeout(()=>{statusEl.textContent='';},2000);
+        }
+        document.body.removeChild(input);
+      };
+      img.src=e.target.result;
     };
-    img.src=e.target.result;
+    reader.readAsDataURL(file);
   };
-  reader.readAsDataURL(file);
+  document.body.appendChild(input);
+  input.click();
 }
 
 function renderTickets(fotos){
