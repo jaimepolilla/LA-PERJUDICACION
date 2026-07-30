@@ -662,8 +662,8 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
       <div style="font-size:16px;font-weight:700;color:var(--texto)">📅 Fechas del evento</div>
       <button onclick="cerrarGestFechas()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--texto3)">✕</button>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Añade los días de cena del evento</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Días de cena del evento${!isAdmin?' (solo lectura)':''}</div>
+    <div id="ev-add-fecha-area" style="display:flex;gap:8px;margin-bottom:14px">
       <input type="date" id="ev-nueva-fecha" style="flex:1;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none" onchange="document.getElementById('ev-nueva-fecha').style.borderColor='var(--ora)'">
       <button class="btn btn-p" onclick="agregarFechaEvento()">+ Añadir</button>
     </div>
@@ -2199,6 +2199,7 @@ function cerrarGestFechas(){
 }
 
 function agregarFechaEvento(){
+  if(!isAdmin){ alert('Solo el administrador puede añadir fechas.'); return; }
   if(!eventoActivo) return;
   const ev = S.eventos.find(e=>e.id===eventoActivo);
   if(!ev) return;
@@ -2213,101 +2214,80 @@ function agregarFechaEvento(){
 }
 
 function eliminarFechaEvento(fecha){
+  if(!isAdmin){ alert('Solo el administrador puede eliminar fechas.'); return; }
   if(!eventoActivo) return;
   const ev = S.eventos.find(e=>e.id===eventoActivo);
   if(!ev) return;
+  if(!confirm('¿Eliminar la fecha '+formatFecha(fecha)+'?')) return;
   ev.fechas = ev.fechas.filter(f=>f!==fecha);
   renderFechasList();
+  saveToFirebase();
+}
+
+function editarFechaEvento(fechaVieja){
+  const row = document.getElementById('fila-fecha-'+fechaVieja.replace(/-/g,''));
+  if(!row) return;
+  const editArea = row.querySelector('.fecha-edit-area');
+  if(!editArea) return;
+  const visible = editArea.style.display !== 'none';
+  document.querySelectorAll('.fecha-edit-area').forEach(a=>a.style.display='none');
+  if(!visible){
+    editArea.style.display = 'flex';
+    const inp = editArea.querySelector('input[type="date"]');
+    if(inp){ inp.value = fechaVieja; inp.focus(); }
+  }
+}
+
+function guardarCambioFecha(fechaVieja){
+  if(!isAdmin) return;
+  if(!eventoActivo) return;
+  const ev = S.eventos.find(e=>e.id===eventoActivo);
+  if(!ev) return;
+  const row = document.getElementById('fila-fecha-'+fechaVieja.replace(/-/g,''));
+  if(!row) return;
+  const inp = row.querySelector('.fecha-edit-area input[type="date"]');
+  const nuevaFecha = inp ? inp.value : '';
+  if(!nuevaFecha){ alert('Selecciona una fecha válida.'); return; }
+  if(nuevaFecha !== fechaVieja && ev.fechas.includes(nuevaFecha)){ alert('Esa fecha ya existe.'); return; }
+  const idx = ev.fechas.indexOf(fechaVieja);
+  if(idx === -1) return;
+  ev.fechas[idx] = nuevaFecha;
+  ev.fechas.sort();
+  ev.asistentes.forEach(a=>{
+    if(a.dias && a.dias.includes(fechaVieja)){
+      a.dias = a.dias.map(d=>d===fechaVieja?nuevaFecha:d);
+    }
+  });
+  renderFechasList();
+  saveToFirebase();
 }
 
 function renderFechasList(){
   const ev = S.eventos && eventoActivo ? S.eventos.find(e=>e.id===eventoActivo) : null;
   const lista = document.getElementById('ev-fechas-lista');
   if(!lista) return;
+  const addArea = document.getElementById('ev-add-fecha-area');
+  if(addArea) addArea.style.display = isAdmin ? 'flex' : 'none';
   if(!ev || !ev.fechas || !ev.fechas.length){
     lista.innerHTML = '<div style="font-size:13px;color:var(--texto3);text-align:center;padding:12px">Sin fechas añadidas</div>';
     return;
   }
   lista.innerHTML = ev.fechas.map(f=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--borde2)">
-      <span style="font-size:14px;font-weight:500">📅 ${formatFecha(f)}</span>
-      <button class="btn btn-sm btn-d" onclick="eliminarFechaEvento('${f}')">✕</button>
+    <div id="fila-fecha-${f.replace(/-/g,'')}" style="padding:10px 0;border-bottom:1px solid var(--borde2)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:14px;font-weight:500">📅 ${formatFecha(f)}</span>
+        ${isAdmin?`<div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="editarFechaEvento('${f}')" style="font-size:11px;color:var(--ora-dd);border-color:rgba(255,107,53,.25)">✏️</button>
+          <button class="btn btn-sm btn-d" onclick="eliminarFechaEvento('${f}')">✕</button>
+        </div>`:''}
+      </div>
+      <div class="fecha-edit-area" style="display:none;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+        <input type="date" style="flex:1;padding:8px 10px;border:1.5px solid var(--ora);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;min-width:140px">
+        <button class="btn btn-p btn-sm" onclick="guardarCambioFecha('${f}')">✓ Guardar</button>
+        <button class="btn btn-sm" onclick="this.closest('.fecha-edit-area').style.display='none'">✕</button>
+      </div>
     </div>`).join('');
 }
-
-document.addEventListener('click',e=>{
-  const m = document.getElementById('ev-fechas-modal');
-  if(m && e.target===m) cerrarGestFechas();
-});
-// ── FIREBASE SYNC ────────────────────────────────────────────
-const firebaseConfig={apiKey:"AIzaSyBkZcLoNXeQbqljlvg1mOWAxB4MaJ11c_o",authDomain:"la-perjudicacion.firebaseapp.com",projectId:"la-perjudicacion",storageBucket:"la-perjudicacion.firebasestorage.app",messagingSenderId:"108138964249",appId:"1:108138964249:web:c95c434607b0a4ad9b1188"};
-let db=null;let syncTimeout=null;let isRemoteUpdate=false;
-
-function initFirebase(){
-  try{
-    firebase.initializeApp(firebaseConfig);
-    db=firebase.firestore();
-    db.collection('perjudicacion').doc('datos').onSnapshot(doc=>{
-      if(doc.exists&&!isRemoteUpdate){
-        const data=doc.data();
-        if(data&&data._ts&&data._ts>(S._ts||0)){
-          isRemoteUpdate=true;
-          S.participantes=data.participantes||[];
-          S.gastos=data.gastos||[];
-          S.ingresos=data.ingresos||[];
-          S.listas=data.listas||[];
-          S.eventos=data.eventos||[];
-          S._ts=data._ts;
-          const active=document.querySelector('.panel.active');
-          if(active){
-            const id=active.id.replace('p-','');
-            if(id==='participantes'){renderParticipantes();updSelects();}
-            if(id==='gastos'){renderGastos();}
-            if(id==='ingresos'){renderIngresos();}
-            if(id==='compras'){renderListas();}
-            if(id==='balance'){renderGastos();renderIngresos();}
-            if(id==='ropa'){renderRopa();}
-            if(id==='eventos'){renderEventos();}
-          }
-          renderResumen();
-          autoPurgeParticipantes();
-          isRemoteUpdate=false;
-          showSync('Sincronizado');
-        }
-      }
-    },err=>{showSync('Error: '+err.code);});
-    showSync('Conectado');
-    loadTallas(data=>{tallasData=data;loadSpotifyQR();const rp=document.getElementById('p-ropa');if(rp&&rp.classList.contains('active'))renderRopa();});
-  }catch(e){showSync('⚠️ Firebase: '+e.message);console.error('Firebase init error:',e);}
-}
-
-function saveToFirebase(){
-  if(!db)return;
-  S._ts=Date.now(); // Set timestamp immediately to prevent snapshot overwrite
-  clearTimeout(syncTimeout);
-  syncTimeout=setTimeout(()=>{
-    db.collection('perjudicacion').doc('datos').set({participantes:S.participantes,gastos:S.gastos,ingresos:S.ingresos,listas:S.listas,eventos:S.eventos||[],_ts:S._ts})
-      .then(()=>{showSync('Guardado');renderResumen();})
-      .catch(()=>showSync('Error al guardar'));
-  },800);
-}
-
-function showSync(msg){
-  // Notifications disabled
-}
-
-const _origFns=['addParticipante','togglePago','delParticipante','addGasto','delGasto','addIngreso','delIngreso','crearLista','delLista','addItem','togItem','delItem','pagarLista','guardarExterno','crearEvento','apuntarseEvento','quitarAsistenteEvento','eliminarEventoActivo','agregarFechaEvento','eliminarFechaEvento'];
-_origFns.forEach(fn=>{const orig=window[fn];if(orig)window[fn]=function(){orig.apply(this,arguments);saveToFirebase();};});
-
-function loadScript(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>showSync('⚠️ No se pudo cargar Firebase');document.head.appendChild(s);}
-
-loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',function(){
-  loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js',function(){
-    initFirebase();
-  });
-});
-
-// ── DOMContentLoaded ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
   // Set initial price label
   const edadSel = document.getElementById('p-edad');
