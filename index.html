@@ -1650,8 +1650,6 @@ function initFirebase(){
     db.collection('perjudicacion').doc('datos').onSnapshot(doc=>{
       if(!doc.exists)return;
       const data=doc.data();
-      // Only update from remote if timestamp is newer
-      if(data._ts && S._ts && data._ts<=S._ts) return;
       isRemoteUpdate=true;
       S.participantes=data.participantes||[];
       S.gastos=data.gastos||[];
