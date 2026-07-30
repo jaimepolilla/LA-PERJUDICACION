@@ -1638,6 +1638,68 @@ document.addEventListener('click',e=>{
   const m2=document.getElementById('perfil-modal');if(m2&&e.target===m2)cerrarPerfil();
 });
 
+
+// ── FIREBASE SYNC ────────────────────────────────────────────
+const firebaseConfig={apiKey:"AIzaSyBkZcLoNXeQbqljlvg1mOWAxB4MaJ11c_o",authDomain:"la-perjudicacion.firebaseapp.com",projectId:"la-perjudicacion",storageBucket:"la-perjudicacion.firebasestorage.app",messagingSenderId:"108138964249",appId:"1:108138964249:web:c95c434607b0a4ad9b1188"};
+let db=null;let syncTimeout=null;let isRemoteUpdate=false;
+
+function initFirebase(){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+    db.collection('perjudicacion').doc('datos').onSnapshot(doc=>{
+      if(!doc.exists)return;
+      const data=doc.data();
+      // Only update from remote if timestamp is newer
+      if(data._ts && S._ts && data._ts<=S._ts) return;
+      isRemoteUpdate=true;
+      S.participantes=data.participantes||[];
+      S.gastos=data.gastos||[];
+      S.ingresos=data.ingresos||[];
+      S.listas=data.listas||[];
+      S.eventos=data.eventos||[];
+      S._ts=data._ts||null;
+      // Re-render active tab
+      const active=document.querySelector('.nav-btn.active');
+      const id=active?active.querySelector('span')?.textContent?.toLowerCase():'';
+      if(id==='socios'){renderSocios();}
+      if(id==='balance'){renderGastos();renderIngresos();}
+      if(id==='compras'){renderListas();renderListaActiva();}
+      if(id==='ropa'){renderRopa();}
+      if(id==='eventos'){renderEventos();}
+      renderResumen();
+      isRemoteUpdate=false;
+    });
+  }catch(e){console.error('Firebase init error',e);}
+}
+
+function saveToFirebase(){
+  if(isRemoteUpdate)return;
+  S._ts=Date.now();
+  clearTimeout(syncTimeout);
+  syncTimeout=setTimeout(()=>{
+    if(!db)return;
+    db.collection('perjudicacion').doc('datos').set({
+      participantes:S.participantes,
+      gastos:S.gastos,
+      ingresos:S.ingresos,
+      listas:S.listas,
+      eventos:S.eventos||[],
+      _ts:S._ts
+    }).then(()=>{renderResumen();})
+      .catch(e=>console.error('Save error',e));
+  },800);
+}
+
+function showSync(msg){
+  // Notifications disabled
+}
+
+const _origFns=['addParticipante','togglePago','delParticipante','addGasto','delGasto','addIngreso','delIngreso','crearLista','delLista','addItem','togItem','delItem','pagarLista','guardarExterno','crearEvento','apuntarseEvento','quitarAsistenteEvento','eliminarEventoActivo','agregarFechaEvento','eliminarFechaEvento'];
+_origFns.forEach(fn=>{const orig=window[fn];if(orig)window[fn]=function(){orig.apply(this,arguments);saveToFirebase();};});
+
+function loadScript(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>console.error('No se pudo cargar',src);document.head.appendChild(s);}
+
 // ── TALLAS FIREBASE ──────────────────────────────────────────
 function saveTallas(nombre,tallas){
   tallasData[nombre]=tallas;
@@ -2435,5 +2497,13 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
   </div>
 </div>
 
+<script>
+function loadScript(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>console.error('No se pudo cargar',src);document.head.appendChild(s);}
+loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function(){
+  loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js', function(){
+    initFirebase();
+  });
+});
+</script>
 </body>
 </html>
