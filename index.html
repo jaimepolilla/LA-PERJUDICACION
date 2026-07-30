@@ -738,6 +738,7 @@ function tab(id,el){
   el.classList.add('active');
   document.getElementById('p-'+id).classList.add('active');
   if(id==='balance'){renderGastos();renderIngresos();}
+  if(id==='participantes'){renderParticipantes();updSelects();}
   if(id==='compras'){renderListas();}
   if(id==='ropa'){
     if(db){db.collection('perjudicacion').doc('tallas').get().then(d=>{tallasData=d.exists?d.data():{};renderRopa();});}
@@ -1128,6 +1129,8 @@ function renderParticipantes(){
     </div>
   `).join('');
 }
+
+function renderSocios(){renderParticipantes();}
 
 function updSelects(){
   const ingSel=document.getElementById('i-ori');
@@ -1660,7 +1663,7 @@ function initFirebase(){
       // Re-render active tab
       const active=document.querySelector('.nav-btn.active');
       const id=active?active.querySelector('span')?.textContent?.toLowerCase():'';
-      if(id==='socios'){renderSocios();}
+      if(id==='socios'||id==='participantes'){renderSocios();}
       if(id==='balance'){renderGastos();renderIngresos();}
       if(id==='compras'){renderListas();renderListaActiva();}
       if(id==='ropa'){renderRopa();}
