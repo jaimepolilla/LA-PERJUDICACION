@@ -286,6 +286,8 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 }
 .user-chip:hover{transform:scale(1.08);}
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -2499,12 +2501,11 @@ document.getElementById('logoimg').src='data:image/png;base64,iVBORw0KGgoAAAANSU
 </div>
 
 <script>
-function loadScript(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>console.error('No se pudo cargar',src);document.head.appendChild(s);}
-loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js', function(){
-  loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js', function(){
-    initFirebase();
-  });
-});
+if(typeof firebase !== 'undefined'){
+  initFirebase();
+} else {
+  window.addEventListener('load', function(){ if(typeof firebase !== 'undefined') initFirebase(); });
+}
 </script>
 </body>
 </html>
