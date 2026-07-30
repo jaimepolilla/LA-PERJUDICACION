@@ -554,14 +554,10 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <div style="border-top:1px solid var(--borde);margin-top:14px;padding-top:14px">
       <div class="stitle"> Foto del ticket</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
-        <label for="ticket-input-camara" class="btn btn-p" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-          📷 Cámara
+        <label for="ticket-input" class="btn btn-p" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          📷 Añadir foto
         </label>
-        <label for="ticket-input-galeria" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;border-color:var(--ora-m);color:var(--ora-dd)">
-          🖼️ Galería
-        </label>
-        <input type="file" id="ticket-input-camara" accept="image/*" style="display:none" onchange="subirTicket(event)">
-        <input type="file" id="ticket-input-galeria" accept="image/*" style="display:none" onchange="subirTicket(event)">
+        <input type="file" id="ticket-input" accept="image/*" style="display:none" onchange="subirTicket(event)">
         <span id="ticket-status" style="font-size:12px;color:var(--texto3)"></span>
       </div>
       <div id="ticket-preview" style="margin-top:10px;display:none">
@@ -1531,11 +1527,20 @@ function renderListaActiva(){
   const impInput=document.getElementById('l-importe');
   if(totalPrecio>0&&!impInput.value)impInput.placeholder=totalPrecio.toFixed(2);
   const info=document.getElementById('l-pagada-info');
-  if(lst.pagadaPor){info.style.display='block';info.textContent=`Pagada por ${lst.pagadaPor} — ${fmt(lst.importe)} (registrado en Gastos)`;}
-  else{info.style.display='none';}
+  const pagarForm=document.getElementById('l-pagar-form');
+  const editarBtn=document.getElementById('l-editar-btn');
+  if(lst.pagadaPor){
+    info.style.display='block';
+    info.textContent=`Pagada por ${lst.pagadaPor} — ${fmt(lst.importe)} (registrado en Gastos)`;
+    if(pagarForm) pagarForm.style.display='none';
+    if(editarBtn) editarBtn.style.display='inline-flex';
+  } else {
+    info.style.display='none';
+    if(pagarForm) pagarForm.style.display='flex';
+    if(editarBtn) editarBtn.style.display='none';
+  }
   renderTicket(lst.ticket||null);
-  const ti=document.getElementById('ticket-input-camara');if(ti)ti.value='';
-  const ti2=document.getElementById('ticket-input-galeria');if(ti2)ti2.value='';
+  const ti=document.getElementById('ticket-input');if(ti)ti.value='';
 }
 
 // ── TICKET ───────────────────────────────────────────────────
