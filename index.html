@@ -1172,22 +1172,24 @@ function cancelarEdicionParticipante(id){
 }
 
 function guardarEdicionParticipante(id){
+  if(!isAdmin){alert('Solo el administrador puede editar participantes.');return;}
   const p=S.participantes.find(x=>x.id===id);
   if(!p) return;
-  const nombre=document.getElementById('pe-nombre-'+id)?.value.trim()||p.nombre;
+  const nombre=(document.getElementById('pe-nombre-'+id)?.value||'').trim();
   const evento=document.getElementById('pe-evento-'+id)?.value||p.evento;
   const dias=parseInt(document.getElementById('pe-dias-'+id)?.value)||0;
   const cantidad=parseFloat(document.getElementById('pe-cantidad-'+id)?.value)||0;
   const pagado=document.getElementById('pe-pagado-'+id)?.value||p.pagado;
-  if(nombre && nombre!==p.nombre){
-    const duplicado=S.participantes.some(x=>x.id!==id && x.nombre.toLowerCase()===nombre.toLowerCase() && x.evento===p.evento);
-    if(duplicado){alert('Ya existe un participante con ese nombre en este evento.');return;}
-    p.nombre=nombre;
-  }
+  if(!nombre){alert('El nombre no puede estar vacío.');return;}
+  // Check duplicate: same name + same new event, excluding self
+  const duplicado=S.participantes.some(x=>x.id!==id && x.nombre.toLowerCase()===nombre.toLowerCase() && x.evento===evento);
+  if(duplicado){alert('Ya existe "'+nombre+'" en "'+evento+'".');return;}
+  p.nombre=nombre;
   p.evento=evento;
   p.dias=dias;
   p.cantidad=cantidad;
   p.pagado=pagado;
+  cancelarEdicionParticipante(id);
   renderParticipantes();
   renderResumen();
   saveToFirebase();
