@@ -1111,22 +1111,80 @@ function renderParticipantes(){
   el.innerHTML=Object.entries(eventos).map(([ev,parts])=>`
     <div style="margin-bottom:4px">
       <div style="font-size:11px;font-weight:600;color:var(--ora-dd);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid rgba(255,107,53,.25);margin-bottom:2px">${ev}</div>
-      ${parts.map(p=>`<div class="li">
+      ${parts.map(p=>{
+        const eventoOpts=['San Isidro','San Esteban','Octubre'].map(e=>`<option value="${e}"${(p.evento||'')==e?' selected':''}>${e}</option>`).join('');
+        return `<div class="li" id="part-row-${p.id}">
         ${(()=>{const t=tallasData[p.nombre];const foto=t&&t.foto?t.foto:localStorage.getItem('fotoPerfil_'+p.nombre);return foto?`<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(p.nombre)}</span></div>`:`<div class="av">${ini(p.nombre)}</div>`;})()}
-        <div><div style="font-size:14px;font-weight:500">${p.nombre}</div><div style="font-size:12px;color:var(--texto3)">${p.tipo==='invitado'?'Invitado · ':''}${p.edad==='nino'?'Niño · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div>
-        ${p.tipo==='invitado'&&p.createdBy?`<div style="font-size:11px;color:var(--texto3);margin-top:2px">Añadido por ${p.createdBy}</div>`:''}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500">${p.nombre}</div>
+          <div style="font-size:12px;color:var(--texto3)" id="part-info-${p.id}">${p.tipo==='invitado'?'Invitado · ':''}${p.edad==='nino'?'Niño · ':''}${p.dias?p.dias+' día'+(p.dias!==1?'s':'')+' · ':''} ${fmt(p.cantidad)} · ${p.evento||''}</div>
+          ${p.tipo==='invitado'&&p.createdBy?`<div style="font-size:11px;color:var(--texto3);margin-top:2px">Añadido por ${p.createdBy}</div>`:''}
+          <!-- Panel edición inline (solo admin) -->
+          <div id="part-edit-${p.id}" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border:1.5px solid var(--ora-m);border-radius:var(--rs)">
+            <div class="form-row" style="margin-bottom:8px">
+              <div class="fg"><label style="font-size:11px">Fiestas</label>
+                <select id="pe-evento-${p.id}">${eventoOpts}</select>
+              </div>
+              <div class="fg" style="flex:0 0 70px"><label style="font-size:11px">Días</label>
+                <input type="number" id="pe-dias-${p.id}" value="${p.dias||0}" min="0" step="1" style="text-align:center">
+              </div>
+              <div class="fg" style="flex:0 0 90px"><label style="font-size:11px">Cantidad (€)</label>
+                <input type="number" id="pe-cantidad-${p.id}" value="${p.cantidad||0}" min="0" step="0.01">
+              </div>
+              <div class="fg"><label style="font-size:11px">Estado</label>
+                <select id="pe-pagado-${p.id}">
+                  <option value="no"${p.pagado==='no'?' selected':''}>Pendiente</option>
+                  <option value="si"${p.pagado==='si'?' selected':''}>Pagado</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-p btn-sm" onclick="guardarEdicionParticipante(${p.id})">✓ Guardar</button>
+              <button class="btn btn-sm" onclick="cancelarEdicionParticipante(${p.id})">✕ Cancelar</button>
+            </div>
+          </div>
+        </div>
         <div class="ml">
+          ${isAdmin?`<button class="btn btn-sm" onclick="editarParticipante(${p.id})" style="font-size:11px;color:var(--ora-dd);border-color:rgba(255,107,53,.25)">✏️</button>`:''}
           <button class="btn btn-sm" onclick="togglePago(${p.id})" style="border-color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};color:${p.pagado==='si'?'var(--ok)':'var(--mal)'};background:${p.pagado==='si'?'var(--ok-bg)':'var(--mal-bg)'};min-width:110px;">
             ${p.pagado==='si'?'Pagado':'Pendiente'}
           </button>
-          ${(p.tipo==='invitado' ? (currentUser && p.createdBy && p.createdBy.toLowerCase()===currentUser.toLowerCase()) : canDelete(p.createdBy))?`<button class="btn btn-sm btn-d" onclick="delParticipante(${p.id})">✕</button>`:''}
+          ${(p.tipo==='invitado' ? (currentUser && p.createdBy && p.createdBy.toLowerCase()===currentUser.toLowerCase()) : canDelete(p.createdBy))||isAdmin?`<button class="btn btn-sm btn-d" onclick="delParticipante(${p.id})">✕</button>`:''}
         </div>
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
     </div>
   `).join('');
 }
 
 function renderSocios(){renderParticipantes();}
+
+function editarParticipante(id){
+  document.querySelectorAll('[id^="part-edit-"]').forEach(el=>el.style.display='none');
+  const panel=document.getElementById('part-edit-'+id);
+  if(panel) panel.style.display='block';
+}
+
+function cancelarEdicionParticipante(id){
+  const panel=document.getElementById('part-edit-'+id);
+  if(panel) panel.style.display='none';
+}
+
+function guardarEdicionParticipante(id){
+  const p=S.participantes.find(x=>x.id===id);
+  if(!p) return;
+  const evento=document.getElementById('pe-evento-'+id)?.value||p.evento;
+  const dias=parseInt(document.getElementById('pe-dias-'+id)?.value)||0;
+  const cantidad=parseFloat(document.getElementById('pe-cantidad-'+id)?.value)||0;
+  const pagado=document.getElementById('pe-pagado-'+id)?.value||p.pagado;
+  p.evento=evento;
+  p.dias=dias;
+  p.cantidad=cantidad;
+  p.pagado=pagado;
+  renderParticipantes();
+  renderResumen();
+  saveToFirebase();
+}
 
 function updSelects(){
   const ingSel=document.getElementById('i-ori');
@@ -2302,20 +2360,78 @@ function renderEventoDetalle(ev){
     const avHtml = foto ?
       `<div class="av" style="background-image:url(${foto});background-size:cover;background-position:center;overflow:hidden"><span style="display:none">${ini(a.nombre)}</span></div>` :
       `<div class="av">${ini(a.nombre)}</div>`;
-    return `<div class="li">
+
+    // Checkboxes para edición inline (solo admin)
+    const diasChecks = ev.fechas && ev.fechas.length ? ev.fechas.map(f=>`
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:6px 10px;border:1.5px solid var(--borde);border-radius:var(--rs);background:#fff">
+        <input type="checkbox" class="asis-dia-cb-${a.id}" value="${f}" ${(a.todos||(a.dias&&a.dias.includes(f)))?'checked':''} style="accent-color:var(--ora);width:15px;height:15px"> ${formatFecha(f)}
+      </label>`).join('') : '<span style="font-size:12px;color:var(--texto3)">Sin fechas en el evento</span>';
+
+    return `<div class="li" id="asis-row-${a.id}">
       ${avHtml}
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:600">${a.nombre}
           ${a.tipo==='invitado'?'<span class="badge b-gray" style="font-size:10px;margin-left:4px">invitado</span>':''}
         </div>
         ${a.tipo==='invitado'&&a.addedBy?`<div style="font-size:11px;color:var(--texto3)">Añadido por ${a.addedBy}</div>`:''}
-        <div style="font-size:11px;color:var(--ora-dd);margin-top:2px">🍽 ${diasTexto}</div>
+        <div style="font-size:11px;color:var(--ora-dd);margin-top:2px" id="asis-dias-lbl-${a.id}">🍽 ${diasTexto}</div>
+        <!-- Panel edición días (solo admin) -->
+        <div id="asis-edit-${a.id}" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border:1.5px solid var(--ora-m);border-radius:var(--rs)">
+          <div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">¿Qué días va a cenar?</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${diasChecks}</div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;padding:8px 12px;background:var(--ora-l);border:1.5px solid var(--ora-m);border-radius:var(--rs);color:var(--ora-dd);margin-bottom:8px">
+            <input type="checkbox" id="asis-todos-${a.id}" ${a.todos?'checked':''} onchange="asisToggleTodos(${a.id})" style="accent-color:var(--ora);width:16px;height:16px"> Todos los días
+          </label>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-p btn-sm" onclick="guardarDiasAsistente(${ev.id},${a.id})">✓ Guardar</button>
+            <button class="btn btn-sm" onclick="cancelarEdicionAsistente(${a.id})">✕ Cancelar</button>
+          </div>
+        </div>
       </div>
-      <div class="ml">
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        ${isAdmin?`<button class="btn btn-sm" onclick="editarDiasAsistente(${a.id})" style="font-size:11px;color:var(--ora-dd);border-color:rgba(255,107,53,.25)">✏️</button>`:''}
         ${puedeEliminar?`<button class="btn btn-sm btn-d" onclick="quitarAsistenteEvento(${ev.id},${a.id})">✕</button>`:''}
       </div>
     </div>`;
   }).join('');
+}
+
+function editarDiasAsistente(asId){
+  // Close any other open editors
+  document.querySelectorAll('[id^="asis-edit-"]').forEach(el=>el.style.display='none');
+  const panel = document.getElementById('asis-edit-'+asId);
+  if(panel) panel.style.display='block';
+}
+
+function cancelarEdicionAsistente(asId){
+  const panel = document.getElementById('asis-edit-'+asId);
+  if(panel) panel.style.display='none';
+}
+
+function asisToggleTodos(asId){
+  const todos = document.getElementById('asis-todos-'+asId).checked;
+  document.querySelectorAll('.asis-dia-cb-'+asId).forEach(cb=>{
+    cb.checked = todos;
+    cb.disabled = todos;
+  });
+}
+
+function guardarDiasAsistente(evId, asId){
+  const ev = S.eventos.find(e=>e.id===evId);
+  if(!ev) return;
+  const a = ev.asistentes.find(x=>x.id===asId);
+  if(!a) return;
+  const todos = document.getElementById('asis-todos-'+asId)?.checked || false;
+  let diasCena = [];
+  if(todos){
+    diasCena = ev.fechas ? [...ev.fechas] : [];
+  } else {
+    document.querySelectorAll('.asis-dia-cb-'+asId+':checked').forEach(cb=>diasCena.push(cb.value));
+  }
+  a.todos = todos;
+  a.dias = diasCena;
+  renderEventoDetalle(ev);
+  saveToFirebase();
 }
 
 // ── GESTIONAR FECHAS DEL EVENTO ───────────────────────────────
