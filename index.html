@@ -505,9 +505,17 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 <div id="p-compras" class="panel">
   <div class="card-a">
     <div class="stitle">Nueva lista de compra</div>
-    <div style="display:flex;gap:8px">
-      <input type="text" id="l-nom" placeholder="Ej: Compra barbacoa" style="flex:1;padding:8px 10px;border:1px solid var(--borde);border-radius:var(--rs);font-size:14px;outline:none">
-      <button class="btn btn-p" onclick="crearLista()">+ Crear</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <input type="text" id="l-nom" placeholder="Ej: Compra barbacoa" style="flex:2;min-width:130px;padding:8px 10px;border:1px solid var(--borde);border-radius:var(--rs);font-size:14px;outline:none">
+      <select id="l-fiesta" style="flex:1;min-width:110px;padding:8px 10px;border:1px solid var(--borde);border-radius:var(--rs);font-size:14px;outline:none">
+        <option value="">— Fiesta —</option>
+        <option value="San Isidro">San Isidro</option>
+        <option value="San Esteban">San Esteban</option>
+        <option value="Octubre">Octubre</option>
+        <option value="Otra">Otra</option>
+      </select>
+      <input type="number" id="l-anio" placeholder="Año" style="flex:0 0 80px;padding:8px 10px;border:1px solid var(--borde);border-radius:var(--rs);font-size:14px;outline:none">
+      <button class="btn btn-p" onclick="crearLista()" style="flex-shrink:0">+ Crear</button>
     </div>
     <div class="pills" id="lst-pills"></div>
     <button onclick="exportarComprasExcel()" class="btn btn-p" style="width:100%;margin-top:8px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px">📊 Exportar compras a Excel</button>
@@ -549,6 +557,16 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
       </div>
       <div id="l-pagada-info" style="display:none;margin-top:8px;padding:10px 12px;background:var(--ok-bg);border-radius:10px;font-size:13px;color:var(--ok);font-weight:500"></div>
       <button id="l-editar-btn" onclick="editarListaPagada()" class="btn" style="display:none;margin-top:8px;font-size:13px;border-color:rgba(255,107,53,.25);color:var(--ora-dd)">Editar precios</button>
+    </div>
+
+    <!-- Comentario de la lista -->
+    <div style="border-top:1px solid var(--borde);margin-top:14px;padding-top:14px">
+      <div class="stitle">💬 Comentario de la lista</div>
+      <textarea id="l-comentario-lista" placeholder="Añade notas sobre esta lista: qué sobró, qué faltó, para el año que viene..." style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--bg);color:var(--texto);box-sizing:border-box;margin-top:8px"></textarea>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <button class="btn btn-p btn-sm" onclick="guardarComentarioLista()">💾 Guardar comentario</button>
+        <span id="l-comentario-ok" style="font-size:12px;color:#15803d;font-weight:600;display:none">✓ Guardado</span>
+      </div>
     </div>
 
     <!-- Fotos del ticket -->
@@ -1354,59 +1372,64 @@ function exportarComprasExcel(){
     var wb = XLS.utils.book_new();
 
     // ── Hoja 1: TODOS LOS ARTÍCULOS ───────────────────────────
-    var artRows = [['Lista','Estado lista','Artículo','Uds.','Tipo','Precio ud. (€)','Total artículo (€)','Comentario','Añadido por','Fecha']];
+    var artRows = [['Fiesta','Año','Lista','Estado','Artículo','Uds.','Tipo','Precio ud. (€)','Total (€)','Comentario','Añadido por','Fecha']];
     listas.forEach(function(lst){
       var items = lst.items || [];
       var estado = lst.pagadaPor ? 'Pagada' : 'Pendiente';
       if(!items.length){
-        artRows.push([lst.nombre, estado, '(sin artículos)', '', '', '', '', '', '']);
+        artRows.push([lst.fiesta||'',lst.anio||'',lst.nombre,estado,'(sin artículos)','','','','','','','']);
         return;
       }
-      items.forEach(function(it, i){
+      items.forEach(function(it,i){
         artRows.push([
-          i===0 ? lst.nombre : '',
-          i===0 ? estado : '',
-          it.nombre || '',
-          it.uds || 1,
-          it.tipo === 'bebida' ? 'Bebida' : it.tipo === 'comida' ? 'Comida' : 'Otro',
-          it.precioUd != null ? it.precioUd : (it.precio || 0),
-          it.precio || 0,
-          it.comentario || '',
-          it.createdBy || '',
-          it.fechaAdd || ''
+          i===0?(lst.fiesta||''):'', i===0?(lst.anio||''):'',
+          i===0?lst.nombre:'', i===0?estado:'',
+          it.nombre||'', it.uds||1,
+          it.tipo==='bebida'?'Bebida':it.tipo==='comida'?'Comida':'Otro',
+          it.precioUd!=null?it.precioUd:(it.precio||0), it.precio||0,
+          it.comentario||'', it.createdBy||'', it.fechaAdd||''
         ]);
       });
-      // Línea subtotal
-      var sub = items.reduce(function(a,i){return a+(i.precio||0);}, 0);
-      artRows.push(['', '', '— Subtotal lista: '+sub.toFixed(2)+' €', '', '', sub, '', '', '']);
-      artRows.push(['', '', '', '', '', '', '', '', '']);
+      var sub=items.reduce(function(a,i){return a+(i.precio||0);},0);
+      artRows.push(['','','','','— Subtotal: '+sub.toFixed(2)+' €','','','',sub,'','','']);
+      artRows.push(['','','','','','','','','','','','']);
     });
     var wsArt = XLS.utils.aoa_to_sheet(artRows);
-    wsArt['!cols'] = [{wch:22},{wch:12},{wch:24},{wch:10},{wch:8},{wch:10},{wch:28},{wch:16},{wch:10}];
+    wsArt['!cols'] = [{wch:14},{wch:6},{wch:22},{wch:10},{wch:22},{wch:6},{wch:8},{wch:12},{wch:12},{wch:28},{wch:16},{wch:10}];
     XLS.utils.book_append_sheet(wb, wsArt, 'Artículos');
 
     // ── Hoja 2: RESUMEN POR LISTA ─────────────────────────────
-    var resRows = [['Lista','Estado','Nº artículos','Total estimado (€)','Pagado por','Fecha pago','Importe pagado (€)']];
+    var resRows = [['Fiesta','Año','Lista','Estado','Nº artículos','Total estimado (€)','Pagado por','Fecha pago','Importe pagado (€)','Comentario lista']];
     listas.forEach(function(lst){
       var items = lst.items || [];
-      var totalEst = items.reduce(function(a,i){return a+(i.precio||0);}, 0);
-      resRows.push([
-        lst.nombre,
-        lst.pagadaPor ? 'Pagada ✓' : 'Pendiente',
-        items.length,
-        totalEst,
-        lst.pagadaPor || '',
-        lst.fechaPago || '',
-        lst.pagadaPor ? (lst.importe||0) : ''
-      ]);
+      var totalEst = items.reduce(function(a,i){return a+(i.precio||0);},0);
+      resRows.push([lst.fiesta||'',lst.anio||'',lst.nombre,lst.pagadaPor?'Pagada ✓':'Pendiente',items.length,totalEst,lst.pagadaPor||'',lst.fechaPago||'',lst.pagadaPor?(lst.importe||0):'',lst.comentarioLista||lst.balanceComentario||'']);
     });
-    resRows.push(['', '', '', '', '', '', '']);
-    var sumEst   = listas.reduce(function(a,l){return a+(l.items||[]).reduce(function(b,i){return b+(i.precio||0);},0);}, 0);
-    var sumPag   = listas.filter(function(l){return l.pagadaPor;}).reduce(function(a,l){return a+(l.importe||0);}, 0);
-    resRows.push(['TOTAL', '', '', sumEst, '', '', sumPag]);
+    var sumEst = listas.reduce(function(a,l){return a+(l.items||[]).reduce(function(b,i){return b+(i.precio||0);},0);},0);
+    var sumPag = listas.filter(function(l){return l.pagadaPor;}).reduce(function(a,l){return a+(l.importe||0);},0);
+    resRows.push(['','','TOTAL','','',sumEst,'','',sumPag]);
     var wsRes = XLS.utils.aoa_to_sheet(resRows);
-    wsRes['!cols'] = [{wch:22},{wch:12},{wch:13},{wch:18},{wch:18},{wch:12},{wch:18}];
+    wsRes['!cols'] = [{wch:14},{wch:6},{wch:22},{wch:12},{wch:12},{wch:16},{wch:18},{wch:12},{wch:16}];
     XLS.utils.book_append_sheet(wb, wsRes, 'Resumen');
+
+    // ── Hoja 3: BALANCE POR FIESTAS ───────────────────────────
+    var grupos={};
+    listas.forEach(function(l){
+      var key=(l.fiesta&&l.anio)?l.fiesta+' '+l.anio:(l.fiesta||String(l.anio||'')||'Sin asignar');
+      if(!grupos[key])grupos[key]={fiesta:l.fiesta||'',anio:l.anio||'',listas:[],comentario:''};
+      grupos[key].listas.push(l);
+      if(l.balanceComentario)grupos[key].comentario=l.balanceComentario;
+    });
+    var balRows=[['Fiesta','Año','Nº listas','Total comprado (€)','Total pagado (€)','Comentario / Balance']];
+    Object.keys(grupos).forEach(function(key){
+      var g=grupos[key];
+      var totalComp=g.listas.reduce(function(a,l){return a+(l.items||[]).reduce(function(b,i){return b+(i.precio||0);},0);},0);
+      var totalPag=g.listas.filter(function(l){return l.pagadaPor;}).reduce(function(a,l){return a+(l.importe||0);},0);
+      balRows.push([g.fiesta,g.anio,g.listas.length,totalComp,totalPag,g.comentario||'']);
+    });
+    var wsBal=XLS.utils.aoa_to_sheet(balRows);
+    wsBal['!cols']=[{wch:14},{wch:6},{wch:10},{wch:18},{wch:16},{wch:60}];
+    XLS.utils.book_append_sheet(wb,wsBal,'Balance por fiestas');
 
     var fecha = new Date().toLocaleDateString('es-ES').replace(/\//g,'-');
     XLS.writeFile(wb, 'compras_perjudicacion_'+fecha+'.xlsx');
@@ -1426,11 +1449,12 @@ function exportarComprasExcel(){
 function exportarCompras(){exportarComprasExcel();}
 
 function crearLista(){
-  console.log('crearLista called');
   const n=document.getElementById('l-nom').value.trim();
   if(!n)return;
+  const fiesta=document.getElementById('l-fiesta')?.value||'';
+  const anio=parseInt(document.getElementById('l-anio')?.value)||new Date().getFullYear();
   const id=Date.now();
-  S.listas.push({id,nombre:n,items:[],pagadaPor:null,importe:0,createdBy:currentUser});
+  S.listas.push({id,nombre:n,fiesta,anio,items:[],pagadaPor:null,importe:0,createdBy:currentUser});
   document.getElementById('l-nom').value='';
   S.listaActiva=id;
   renderListas();
@@ -1515,9 +1539,87 @@ function updListaPagador(){}
 function renderListas(){
   const pills=document.getElementById('lst-pills');
   const card=document.getElementById('lst-activa-card');
-  if(!S.listas.length){pills.innerHTML='';card.style.display='none';return;}
-  pills.innerHTML=S.listas.map(l=>`<button class="pill${l.id===S.listaActiva?' active':''}" onclick="selLista(${l.id})">${l.pagadaPor?'':''}${l.nombre}${canDelete(l.createdBy)?` <span onclick="delLista(${l.id},event)" style="opacity:.5;margin-left:3px">✕</span>`:''}</button>`).join('');
+  if(!S.listas.length){pills.innerHTML='<div class="empty" style="font-size:13px">Sin listas de compra</div>';card.style.display='none';return;}
+
+  // Group by fiesta+año
+  const grupos={};
+  S.listas.forEach(l=>{
+    const key=(l.fiesta&&l.anio)?l.fiesta+' '+l.anio:(l.fiesta||l.anio||'Sin asignar');
+    if(!grupos[key])grupos[key]={key,fiesta:l.fiesta||'',anio:l.anio||'',listas:[]};
+    grupos[key].listas.push(l);
+  });
+  const orden=['San Isidro','San Esteban','Octubre','Otra',''];
+  const sortedKeys=Object.keys(grupos).sort((a,b)=>{
+    const ga=grupos[a],gb=grupos[b];
+    if((gb.anio||0)!==(ga.anio||0))return (gb.anio||0)-(ga.anio||0);
+    return orden.indexOf(ga.fiesta)-orden.indexOf(gb.fiesta);
+  });
+
+  pills.innerHTML=sortedKeys.map((key,gIdx)=>{
+    const g=grupos[key];
+    const allPaid=g.listas.every(l=>l.pagadaPor);
+    const somePaid=g.listas.some(l=>l.pagadaPor);
+    const groupComment=g.listas.find(l=>l.balanceComentario)?.balanceComentario||'';
+    const ids=g.listas.map(l=>l.id).join(',');
+    const pillsHtml=g.listas.map(l=>{
+      const paid=l.pagadaPor;
+      const active=l.id===S.listaActiva;
+      const st=paid?'background:#dcfce7;border:2px solid #16a34a;color:#15803d;font-weight:700;':'';
+      const lbl=(paid?'\u2713 ':'')+l.nombre;
+      const del=canDelete(l.createdBy)?' <span onclick="delLista('+l.id+',event)" style="opacity:.5;margin-left:3px">\u2715</span>':'';
+      return '<button class="pill'+(active?' active':'')+'" onclick="selLista('+l.id+')" style="'+st+'">'+lbl+del+'</button>';
+    }).join('');
+    const balBtn=(somePaid||allPaid)?'<button class="btn btn-sm" onclick="toggleBalanceComentario('+gIdx+')" style="font-size:11px;color:var(--ora-dd);border-color:rgba(255,107,53,.25)">📝 Balance</button>':'';
+    const titulo=(allPaid?'\u2713 ':'')+key+(allPaid?' \u2014 Todo pagado':somePaid?' \u2014 Parcialmente pagado':'');
+    const balArea='<div id="balance-area-'+gIdx+'" style="display:'+(groupComment?'block':'none')+';margin-top:8px">'
+      +'<textarea id="balance-txt-'+gIdx+'" placeholder="Balance: qué sobró, qué faltó, notas..." style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--ora-m);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--ora-l);color:var(--texto);box-sizing:border-box">'+groupComment+'</textarea>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
+      +'<button class="btn btn-p btn-sm" onclick="guardarBalanceComentario(\''+ids+'\','+gIdx+')">💾 Guardar balance</button>'
+      +'<span id="balance-ok-'+gIdx+'" style="font-size:12px;color:#15803d;font-weight:600;display:none">✓ Guardado</span>'
+      +'</div></div>';
+    return '<div style="margin-bottom:12px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.06em">'+titulo+'</div>'
+      +balBtn+'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+pillsHtml+'</div>'
+      +balArea+'</div>';
+  }).join('');
+
   renderListaActiva();
+}
+
+function toggleBalanceComentario(gIdx){
+  const area=document.getElementById('balance-area-'+gIdx);
+  if(!area)return;
+  area.style.display=area.style.display==='none'?'block':'none';
+  if(area.style.display==='block'){setTimeout(()=>document.getElementById('balance-txt-'+gIdx)?.focus(),50);}
+}
+
+function guardarBalanceComentario(idsStr,gIdx){
+  const ids=idsStr.split(',').map(Number);
+  const ta=document.getElementById('balance-txt-'+gIdx);
+  if(!ta)return;
+  const comentario=ta.value;
+  ids.forEach(id=>{const l=S.listas.find(x=>x.id===id);if(l)l.balanceComentario=comentario;});
+  saveToFirebase();
+  const ok=document.getElementById('balance-ok-'+gIdx);
+  if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none';},3000);}
+}
+
+function guardarComentarioLista(){
+  const lst=S.listas.find(l=>l.id===S.listaActiva);if(!lst)return;
+  const ta=document.getElementById('l-comentario-lista');if(!ta)return;
+  lst.comentarioLista=ta.value;
+  saveToFirebase();
+  const ok=document.getElementById('l-comentario-ok');
+  if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none';},3000);}
+}
+
+function actualizarFiestaLista(){
+  const lst=S.listas.find(l=>l.id===S.listaActiva);if(!lst)return;
+  lst.fiesta=document.getElementById('l-det-fiesta')?.value||'';
+  lst.anio=parseInt(document.getElementById('l-det-anio')?.value)||null;
+  renderListas();saveToFirebase();
 }
 
 function renderListaActiva(){
@@ -1526,7 +1628,26 @@ function renderListaActiva(){
   const lst=S.listas.find(l=>l.id===S.listaActiva);
   if(!lst){card.style.display='none';return;}
   card.style.display='block';
-  document.getElementById('l-titulo').textContent=lst.nombre;
+  const tituloEl=document.getElementById('l-titulo');
+  tituloEl.innerHTML=lst.nombre+(lst.fiesta||lst.anio?` <span style="font-size:12px;font-weight:400;color:var(--texto3);margin-left:4px">${[lst.fiesta,lst.anio].filter(Boolean).join(' ')}</span>`:'');
+  // Fiesta/año edit row
+  let fiestaEdit=document.getElementById('l-fiesta-edit-row');
+  if(!fiestaEdit){
+    fiestaEdit=document.createElement('div');
+    fiestaEdit.id='l-fiesta-edit-row';
+    fiestaEdit.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center';
+    fiestaEdit.innerHTML='<span style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.05em">Fiesta</span>'
+      +'<select id="l-det-fiesta" onchange="actualizarFiestaLista()" style="flex:1;padding:6px 8px;border:1px solid var(--borde);border-radius:var(--rs);font-size:13px;outline:none">'
+      +'<option value="">— Sin asignar —</option>'
+      +'<option value="San Isidro">San Isidro</option>'
+      +'<option value="San Esteban">San Esteban</option>'
+      +'<option value="Octubre">Octubre</option>'
+      +'<option value="Otra">Otra</option></select>'
+      +'<input type="number" id="l-det-anio" onchange="actualizarFiestaLista()" placeholder="Año" style="flex:0 0 75px;padding:6px 8px;border:1px solid var(--borde);border-radius:var(--rs);font-size:13px;outline:none">';
+    card.insertBefore(fiestaEdit, card.firstChild.nextSibling);
+  }
+  document.getElementById('l-det-fiesta').value=lst.fiesta||'';
+  document.getElementById('l-det-anio').value=lst.anio||'';
   // Hide add form if list is paid
   const addForm=card.querySelector('.form-row');
   if(addForm) addForm.style.display=lst.pagadaPor?'none':'flex';
@@ -1604,6 +1725,9 @@ function renderListaActiva(){
     if(editarBtn) editarBtn.style.display='none';
   }
   renderTickets(lst.fotos||(lst.ticket?[lst.ticket]:[]));
+  // Populate comment
+  const taComentario=document.getElementById('l-comentario-lista');
+  if(taComentario) taComentario.value=lst.comentarioLista||'';
 }
 
 // ── TICKET ───────────────────────────────────────────────────
