@@ -286,6 +286,11 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
   -webkit-tap-highlight-color:transparent;
 }
 .user-chip:hover{transform:scale(1.08);}
+.user-chip.admin-chip{
+  background:linear-gradient(135deg,#7c3aed,#a100ff);
+  box-shadow:0 2px 8px rgba(161,0,255,.4);
+  border:2px solid #fff;
+}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -1025,7 +1030,8 @@ function _finalizarLogin(n){
   if(isAdmin && tallasGrid) tallasGrid.style.display='none';
   document.getElementById('login-overlay').style.display='none';
   document.getElementById('user-chip').style.display='flex';
-  document.getElementById('user-chip-name').textContent=n.charAt(0).toUpperCase();
+  document.getElementById('user-chip-name').textContent=isAdmin?'👑':n.charAt(0).toUpperCase();
+  document.getElementById('user-chip').classList.toggle('admin-chip',isAdmin);
   // Show admin controls
   const adminWrap=document.getElementById('admin-precio-dia-wrap');
   if(adminWrap) adminWrap.style.display=isAdmin?'flex':'none';
@@ -2775,7 +2781,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('login-nombre').value=saved;
     document.getElementById('login-overlay').style.display='none';
     document.getElementById('user-chip').style.display='flex';
-    document.getElementById('user-chip-name').textContent=saved.charAt(0).toUpperCase();
+    document.getElementById('user-chip-name').textContent=isAdmin?'👑':saved.charAt(0).toUpperCase();
+    document.getElementById('user-chip').classList.toggle('admin-chip',isAdmin);
     const savedPhoto=localStorage.getItem('fotoPerfil_'+saved);
     if(savedPhoto){actualizarChipFoto(savedPhoto);}
     else if(db){db.collection('perjudicacion').doc('tallas').get().then(doc=>{if(doc.exists&&doc.data()[saved]&&doc.data()[saved].foto){const foto=doc.data()[saved].foto;localStorage.setItem('fotoPerfil_'+saved,foto);actualizarChipFoto(foto);}});}
