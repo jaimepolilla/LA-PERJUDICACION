@@ -528,6 +528,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <div class="pbar"><div class="pfill" id="l-prog" style="width:0%"></div></div>
 
     <!-- Añadir artículo -->
+    <div id="l-add-form">
     <div class="form-row" style="margin-bottom:6px">
       <div class="fg" style="flex:0 0 70px"><label>Uds.</label><input type="number" id="li-uds" placeholder="1" min="1" step="1" value="1" style="text-align:center"></div>
       <div class="fg"><label>Artículo</label><input type="text" id="li-nom" placeholder="Ej: Cerveza"></div>
@@ -544,6 +545,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <div class="form-row" style="margin-bottom:11px;align-items:flex-end">
       <div class="fg" style="flex:3"><label>Comentario <span style="font-weight:400;color:var(--muted)">(opcional — packs, marca, etc.)</span></label><input type="text" id="li-comentario" placeholder="Ej: Pack 24 latas, marca Estrella"></div>
       <button class="btn btn-p" onclick="addItem()" style="align-self:flex-end;flex-shrink:0">+ Añadir</button>
+    </div>
     </div>
     <div id="lst-items"><div class="empty">Lista vacía</div></div>
 
@@ -875,13 +877,7 @@ function guardarEdicionItem(lstId, itemId){
   it.precioUd = prUd;
   it.precio = parseFloat((prUd*uds).toFixed(2));
   it.comentario = com;
-  // Si la lista está pagada, recalcular el gasto vinculado
-  if(lst.pagadaPor && lst.gastoId){
-    const nuevoTotal = lst.items.reduce((a,i)=>a+(i.precio||0), 0);
-    lst.importe = nuevoTotal;
-    const g = S.gastos.find(g=>g.id===lst.gastoId);
-    if(g) g.importe = nuevoTotal;
-  }
+  syncGastoLista(lst);
   renderListaActiva();
   renderGastos();
   renderResumen();
@@ -925,28 +921,38 @@ function editarListaPagada(){
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
 }
 
+// Sincroniza el gasto vinculado con el total real de los artículos
+function syncGastoLista(lst){
+  if(!lst||!lst.pagadaPor||!lst.gastoId) return;
+  const nuevoTotal=lst.items.reduce((a,i)=>a+(i.precio||0),0);
+  lst.importe=nuevoTotal;
+  const g=S.gastos.find(g=>g.id===lst.gastoId);
+  if(g){g.importe=nuevoTotal;g.concepto=lst.nombre;}
+}
+
 function guardarEdicionLista(){
   const lst=S.listas.find(l=>l.id===S.listaActiva);
   if(!lst)return;
-  // Update item prices
+  // Update item prices and precioUd
   const inputs=document.querySelectorAll('#editar-items-list input[data-id]');
   inputs.forEach(inp=>{
     const id=parseInt(inp.dataset.id);
     const it=lst.items.find(i=>i.id===id);
-    if(it) it.precio=parseFloat(inp.value)||0;
+    if(it){
+      const precio=parseFloat(inp.value)||0;
+      it.precio=precio;
+      // Recalcular precioUd en base a uds actuales
+      it.precioUd=it.uds>1?parseFloat((precio/(it.uds||1)).toFixed(4)):precio;
+    }
   });
-  // Update total importe
-  const nuevoImporte=parseFloat(document.getElementById('editar-importe').value)||lst.items.reduce((a,i)=>a+(i.precio||0),0);
-  if(nuevoImporte>0){
-    lst.importe=nuevoImporte;
-    // Update the associated gasto
-    const g=S.gastos.find(g=>g.id===lst.gastoId);
-    if(g) g.importe=nuevoImporte;
-  }
+  // Importe manual override solo si se puso algo diferente a la suma
+  const importeManual=parseFloat(document.getElementById('editar-importe').value)||0;
+  const sumaItems=lst.items.reduce((a,i)=>a+(i.precio||0),0);
+  lst.importe=importeManual>0?importeManual:sumaItems;
+  const g=S.gastos.find(g=>g.id===lst.gastoId);
+  if(g) g.importe=lst.importe;
   document.getElementById('editar-precios-modal').remove();
-  renderListaActiva();
-  renderGastos();
-  renderResumen();
+  renderListaActiva();renderGastos();renderResumen();
   saveToFirebase();
   showSync('Precios actualizados');
 }
@@ -1490,7 +1496,7 @@ function addItem(){
   if(!S.listaActiva)return;
   const lst=S.listas.find(l=>l.id===S.listaActiva);
   if(!lst)return;
-  if(lst.pagadaPor){alert('Esta lista ya está marcada como pagada.');return;}
+  if(lst.pagadaPor&&!isAdmin){alert('Solo el administrador puede modificar una lista pagada.');return;}
   S._ts=Date.now(); // Prevent Firebase snapshot from overwriting
   const uds=parseInt(document.getElementById('li-uds').value)||1;
   const n=document.getElementById('li-nom').value.trim();
@@ -1518,12 +1524,7 @@ function delItem(lid,iid){
   if(lst.pagadaPor && !isAdmin){alert('Solo el administrador puede modificar una lista pagada.');return;}
   if(!confirm('¿Eliminar este artículo?'))return;
   lst.items=lst.items.filter(i=>i.id!==iid);
-  if(lst.pagadaPor&&lst.gastoId){
-    const nuevoTotal=lst.items.reduce((a,i)=>a+(i.precio||0),0);
-    lst.importe=nuevoTotal;
-    const g=S.gastos.find(g=>g.id===lst.gastoId);
-    if(g) g.importe=nuevoTotal;
-  }
+  syncGastoLista(lst);
   renderListaActiva();renderGastos();renderResumen();
 }
 
@@ -1669,9 +1670,11 @@ function renderListaActiva(){
   }
   document.getElementById('l-det-fiesta').value=lst.fiesta||'';
   document.getElementById('l-det-anio').value=lst.anio||'';
-  // Hide add form if list is paid
-  const addForm=card.querySelector('.form-row');
-  if(addForm) addForm.style.display=lst.pagadaPor?'none':'flex';
+  // Show/hide add form and fiesta/año edit based on paid status and admin
+  const addForm=document.getElementById('l-add-form');
+  if(addForm) addForm.style.display=(lst.pagadaPor&&!isAdmin)?'none':'block';
+  const fiestaRow=document.getElementById('l-fiesta-edit-row');
+  if(fiestaRow) fiestaRow.style.display=(lst.pagadaPor&&!isAdmin)?'none':'flex';
   const tot=lst.items.length,done=lst.items.filter(i=>i.done).length;
   document.getElementById('l-prog-lbl').textContent=tot?`${done} de ${tot} cogidos`:'';
   document.getElementById('l-prog').style.width=tot?Math.round(done/tot*100)+'%':'0%';
