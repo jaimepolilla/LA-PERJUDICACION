@@ -496,7 +496,10 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
       <div id="r-balance"><div class="empty">Añade participantes para ver el balance</div></div>
     </div>
     <div class="card">
-      <div class="stitle">Últimos movimientos</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="stitle" style="margin:0">Últimos movimientos</div>
+        <button id="btn-recalcular" onclick="recalcularGastosCompras()" style="display:none;font-size:11px;padding:5px 10px;border:1.5px solid #16a34a;background:#dcfce7;color:#15803d;border-radius:20px;cursor:pointer;font-weight:600">🔄 Recalcular gastos</button>
+      </div>
       <div id="r-movs"><div class="empty">Sin movimientos</div></div>
     </div>
   </div>
@@ -922,6 +925,24 @@ function editarListaPagada(){
 }
 
 // Sincroniza el gasto vinculado con el total real de los artículos
+function recalcularGastosCompras(){
+  if(!isAdmin){alert('Solo el administrador puede recalcular gastos.');return;}
+  // Eliminar TODOS los gastos auto+compra
+  S.gastos=S.gastos.filter(g=>!(g.auto&&g.categoria==='compra'));
+  // Recrear uno por lista pagada con la suma real de artículos
+  S.listas.forEach(lst=>{
+    if(!lst.pagadaPor) return;
+    const sumaItems=parseFloat(lst.items.reduce((a,i)=>a+(i.precio||0),0).toFixed(2));
+    const gid=lst.id+'_g';
+    lst.gastoId=gid;
+    lst.importe=sumaItems;
+    S.gastos.push({id:gid,auto:true,concepto:lst.nombre,importe:sumaItems,pagadorNombre:lst.pagadaPor,categoria:'compra',fecha:lst.fechaPago||hoy(),createdBy:''});
+  });
+  saveToFirebase();
+  renderGastos();renderResumen();
+  alert('✓ Gastos de compras recalculados correctamente.');
+}
+
 function syncGastoLista(lst){
   if(!lst||!lst.pagadaPor||!lst.gastoId) return;
   const nuevoTotal=lst.items.reduce((a,i)=>a+(i.precio||0),0);
@@ -1329,6 +1350,9 @@ function renderResumen(){
   // Only render when resumen is visible
   const balRes=document.getElementById('bal-resumen');
   if(!balRes||balRes.style.display==='none')return;
+  // Show recalculate button for admin
+  const btnRec=document.getElementById('btn-recalcular');
+  if(btnRec) btnRec.style.display=isAdmin?'block':'none';
   const tI=S.ingresos.reduce((a,g)=>a+g.importe,0);
   const tG=S.gastos.reduce((a,g)=>a+g.importe,0);
   const sal=tI-tG;
@@ -1953,43 +1977,45 @@ function initFirebase(){
       S.eventos=data.eventos||[];
       S._ts=data._ts||null;
 
-      // ── Limpieza de gastos de compras duplicados ──────────
-      const gastoIdValidos=new Set(S.listas.filter(l=>l.gastoId).map(l=>l.gastoId));
-      // Eliminar gastos auto+compra que no tengan gastoId válido en ninguna lista
+      // ── LIMPIEZA Y SINCRONIZACIÓN DE GASTOS DE COMPRAS ──────
+      // Paso 1: construir mapa gastoId → lista
+      const mapaGastos={};
+      S.listas.forEach(lst=>{ if(lst.gastoId) mapaGastos[lst.gastoId]=lst; });
+
+      // Paso 2: eliminar gastos auto+compra sin lista válida asociada
       S.gastos=S.gastos.filter(g=>{
-        if(g.auto&&g.categoria==='compra') return gastoIdValidos.has(g.id);
+        if(g.auto&&g.categoria==='compra') return !!mapaGastos[g.id];
         return true;
       });
-      // Para cada lista pagada, asegurarse que su gasto existe y tiene el importe correcto
-      let necesitaGuardar=false;
+
+      // Paso 3: para cada lista pagada, recalcular y corregir el gasto
+      let dirty=false;
       S.listas.forEach(lst=>{
         if(!lst.pagadaPor) return;
+        const sumaItems=parseFloat(lst.items.reduce((a,i)=>a+(i.precio||0),0).toFixed(2));
         if(!lst.gastoId){
-          // Lista pagada sin gastoId — crear gasto
-          const gastoId=lst.id+'_gasto';
-          const nuevoTotal=lst.items.reduce((a,i)=>a+(i.precio||0),0);
-          lst.gastoId=gastoId;lst.importe=nuevoTotal;
-          S.gastos.push({id:gastoId,auto:true,concepto:lst.nombre,importe:nuevoTotal,pagadorNombre:lst.pagadaPor,categoria:'compra',fecha:lst.fechaPago||hoy(),createdBy:''});
-          necesitaGuardar=true;
+          // Sin gastoId — crear gasto
+          const gid=lst.id+'_g';
+          lst.gastoId=gid; lst.importe=sumaItems;
+          S.gastos.push({id:gid,auto:true,concepto:lst.nombre,importe:sumaItems,pagadorNombre:lst.pagadaPor,categoria:'compra',fecha:lst.fechaPago||hoy(),createdBy:''});
+          dirty=true;
         } else {
           const g=S.gastos.find(x=>x.id===lst.gastoId);
-          const nuevoTotal=parseFloat(lst.items.reduce((a,i)=>a+(i.precio||0),0).toFixed(2));
           if(!g){
             // Gasto perdido — recrear
-            S.gastos.push({id:lst.gastoId,auto:true,concepto:lst.nombre,importe:nuevoTotal,pagadorNombre:lst.pagadaPor,categoria:'compra',fecha:lst.fechaPago||hoy(),createdBy:''});
-            lst.importe=nuevoTotal;
-            necesitaGuardar=true;
-          } else if(Math.abs(g.importe-nuevoTotal)>0.01){
-            // Importe desincronizado — corregir
-            g.importe=nuevoTotal;
-            g.concepto=lst.nombre;
-            lst.importe=nuevoTotal;
-            necesitaGuardar=true;
+            S.gastos.push({id:lst.gastoId,auto:true,concepto:lst.nombre,importe:sumaItems,pagadorNombre:lst.pagadaPor,categoria:'compra',fecha:lst.fechaPago||hoy(),createdBy:''});
+            lst.importe=sumaItems; dirty=true;
+          } else if(Math.abs(g.importe-sumaItems)>0.005){
+            // Importe incorrecto — corregir
+            g.importe=sumaItems; g.concepto=lst.nombre; g.pagadorNombre=lst.pagadaPor;
+            lst.importe=sumaItems; dirty=true;
           }
         }
       });
-      if(necesitaGuardar) setTimeout(()=>saveToFirebase(),2000);
-      // Re-render active tab
+      // Paso 4: si hubo correcciones, guardar en Firebase
+      if(dirty){ isRemoteUpdate=false; saveToFirebase(); return; }
+      // ─────────────────────────────────────────────────────────
+
       const active=document.querySelector('.nav-btn.active');
       const id=active?active.querySelector('span')?.textContent?.toLowerCase():'';
       if(id==='socios'||id==='participantes'){renderSocios();}
