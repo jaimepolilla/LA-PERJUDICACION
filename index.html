@@ -286,11 +286,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
   -webkit-tap-highlight-color:transparent;
 }
 .user-chip:hover{transform:scale(1.08);}
-.user-chip.admin-chip{
-  background:linear-gradient(135deg,#7c3aed,#a100ff);
-  box-shadow:0 2px 8px rgba(161,0,255,.4);
-  border:2px solid #fff;
-}
+.user-chip.admin-chip{background:linear-gradient(135deg,#7c3aed,#a100ff);box-shadow:0 2px 8px rgba(161,0,255,.4);border:2px solid #fff;}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -938,20 +934,17 @@ function editarListaPagada(){
 // Sincroniza el gasto vinculado con el total real de los artículos
 function recalcularGastosCompras(){
   if(!isAdmin){alert('Solo el administrador puede recalcular gastos.');return;}
-  // Eliminar TODOS los gastos auto+compra existentes
   S.gastos=S.gastos.filter(g=>!(g.auto&&g.categoria==='compra'));
-  // Recrear uno por lista pagada con la suma real de artículos
   S.listas.forEach(lst=>{
     if(!lst.pagadaPor)return;
-    const sumaItems=parseFloat(lst.items.reduce((a,i)=>a+(i.precio||0),0).toFixed(2));
+    const suma=parseFloat(lst.items.reduce((a,i)=>a+(i.precio||0),0).toFixed(2));
     const gid=lst.id+'_g';
-    lst.gastoId=gid;
-    lst.importe=sumaItems;
-    S.gastos.push({id:gid,auto:true,concepto:lst.nombre,importe:sumaItems,pagadorNombre:lst.pagadaPor,categoria:'compra',fecha:lst.fechaPago||hoy(),createdBy:''});
+    lst.gastoId=gid; lst.importe=suma;
+    S.gastos.push({id:gid,auto:true,concepto:lst.nombre,importe:suma,pagadorNombre:lst.pagadaPor,categoria:'compra',fecha:lst.fechaPago||hoy(),createdBy:''});
   });
   saveToFirebase();
   renderGastos();renderResumen();
-  alert('✓ Gastos recalculados. El balance ahora es correcto.');
+  alert('✓ Gastos recalculados correctamente.');
 }
 
 function syncGastoLista(lst){
@@ -1361,7 +1354,6 @@ function balTab(t){
 
 // ── RESUMEN ──────────────────────────────────────────────────
 function renderResumen(){
-  // Only render when resumen is visible
   const balRes=document.getElementById('bal-resumen');
   if(!balRes||balRes.style.display==='none')return;
   const cardRec=document.getElementById('card-recalcular');
@@ -1990,10 +1982,9 @@ function initFirebase(){
       S.eventos=data.eventos||[];
       S._ts=data._ts||null;
 
-      // ── Limpiar gastos duplicados de compras ───────────────
+      // Limpiar gastos duplicados y sincronizar importes
       const gastoIdValidos=new Set(S.listas.filter(l=>l.gastoId).map(l=>l.gastoId));
       S.gastos=S.gastos.filter(g=>!(g.auto&&g.categoria==='compra')||gastoIdValidos.has(g.id));
-      // Sincronizar importe de cada gasto con la suma real de artículos
       let dirty=false;
       S.listas.forEach(lst=>{
         if(!lst.pagadaPor)return;
@@ -2783,6 +2774,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('user-chip').style.display='flex';
     document.getElementById('user-chip-name').textContent=isAdmin?'👑':saved.charAt(0).toUpperCase();
     document.getElementById('user-chip').classList.toggle('admin-chip',isAdmin);
+    const cardRecAuto=document.getElementById('card-recalcular');
+    if(cardRecAuto) cardRecAuto.style.display=isAdmin?'block':'none';
     const savedPhoto=localStorage.getItem('fotoPerfil_'+saved);
     if(savedPhoto){actualizarChipFoto(savedPhoto);}
     else if(db){db.collection('perjudicacion').doc('tallas').get().then(doc=>{if(doc.exists&&doc.data()[saved]&&doc.data()[saved].foto){const foto=doc.data()[saved].foto;localStorage.setItem('fotoPerfil_'+saved,foto);actualizarChipFoto(foto);}});}
