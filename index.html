@@ -845,6 +845,9 @@ function copyIban(){
 
 
 function toggleEdicionItem(itemId){
+  // Find which list this item belongs to
+  const lst=S.listas.find(l=>l.items&&l.items.some(i=>i.id===itemId));
+  if(lst&&lst.pagadaPor&&!isAdmin){alert('Solo el administrador puede modificar una lista pagada.');return;}
   const el = document.getElementById('edit-'+itemId);
   if(!el) return;
   const visible = el.style.display !== 'none';
@@ -859,6 +862,7 @@ function cancelarEdicionItem(itemId){
 function guardarEdicionItem(lstId, itemId){
   const lst = S.listas.find(l=>l.id===lstId);
   if(!lst) return;
+  if(lst.pagadaPor && !isAdmin){alert('Solo el administrador puede modificar una lista pagada.');return;}
   const it = lst.items.find(i=>i.id===itemId);
   if(!it) return;
   const uds  = parseInt(document.getElementById('eu-'+itemId)?.value)||1;
@@ -871,7 +875,16 @@ function guardarEdicionItem(lstId, itemId){
   it.precioUd = prUd;
   it.precio = parseFloat((prUd*uds).toFixed(2));
   it.comentario = com;
+  // Si la lista está pagada, recalcular el gasto vinculado
+  if(lst.pagadaPor && lst.gastoId){
+    const nuevoTotal = lst.items.reduce((a,i)=>a+(i.precio||0), 0);
+    lst.importe = nuevoTotal;
+    const g = S.gastos.find(g=>g.id===lst.gastoId);
+    if(g) g.importe = nuevoTotal;
+  }
   renderListaActiva();
+  renderGastos();
+  renderResumen();
   saveToFirebase();
 }
 function editarPrecioItem(lstId, itemId){ toggleEdicionItem(itemId); }
@@ -1500,10 +1513,18 @@ function togItem(lid,iid){
 }
 
 function delItem(lid,iid){
-  if(!confirm('¿Eliminar este artículo?'))return;
   const lst=S.listas.find(l=>l.id===lid);
-  if(lst)lst.items=lst.items.filter(i=>i.id!==iid);
-  renderListaActiva();
+  if(!lst)return;
+  if(lst.pagadaPor && !isAdmin){alert('Solo el administrador puede modificar una lista pagada.');return;}
+  if(!confirm('¿Eliminar este artículo?'))return;
+  lst.items=lst.items.filter(i=>i.id!==iid);
+  if(lst.pagadaPor&&lst.gastoId){
+    const nuevoTotal=lst.items.reduce((a,i)=>a+(i.precio||0),0);
+    lst.importe=nuevoTotal;
+    const g=S.gastos.find(g=>g.id===lst.gastoId);
+    if(g) g.importe=nuevoTotal;
+  }
+  renderListaActiva();renderGastos();renderResumen();
 }
 
 function pagarLista(){
@@ -1698,8 +1719,8 @@ function renderListaActiva(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-        <button class="btn btn-sm" onclick="toggleEdicionItem(${it.id})" style="border-color:rgba(255,107,53,.25);color:var(--ora-dd);font-size:11px;padding:5px 9px">✏️ Editar</button>
-        ${!lst.pagadaPor&&canDelete(it.createdBy)?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
+        <button class="btn btn-sm" onclick="toggleEdicionItem(${it.id})" style="border-color:rgba(255,107,53,.25);color:var(--ora-dd);font-size:11px;padding:5px 9px" ${lst.pagadaPor&&!isAdmin?'style="display:none"':''}>✏️ Editar</button>
+        ${(!lst.pagadaPor&&canDelete(it.createdBy))||isAdmin?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
       </div>
     </div>`;
     }).join('');
