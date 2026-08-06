@@ -422,6 +422,16 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
 </div>
 
 <div id="p-balance" class="panel">
+  <!-- Admin recalculate button - always visible for admin -->
+  <div id="card-recalcular" style="display:none;background:#dcfce7;border:1.5px solid #16a34a;border-radius:var(--r);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-sm)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#15803d">🔄 Recalcular gastos de compras</div>
+        <div style="font-size:12px;color:#166534;margin-top:2px">Corrige importes incorrectos en el balance</div>
+      </div>
+      <button onclick="recalcularGastosCompras()" style="padding:10px 18px;background:#16a34a;color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:700;font-size:13px;font-family:inherit;flex-shrink:0">Recalcular</button>
+    </div>
+  </div>
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)">
     <button id="bal-tab-gastos" onclick="balTab('gastos')" class="subtab active">Gastos</button>
@@ -495,15 +505,6 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <div class="card">
       <div class="stitle">Balance por socio</div>
       <div id="r-balance"><div class="empty">Añade participantes para ver el balance</div></div>
-    </div>
-    <div id="card-recalcular" class="card" style="display:none;background:#dcfce7;border:1.5px solid #16a34a">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:#15803d">🔄 Recalcular gastos de compras</div>
-          <div style="font-size:12px;color:#166534;margin-top:2px">Corrige importes incorrectos en el balance</div>
-        </div>
-        <button onclick="recalcularGastosCompras()" style="padding:10px 18px;background:#16a34a;color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:700;font-size:13px;font-family:inherit;flex-shrink:0">Recalcular</button>
-      </div>
     </div>
     <div class="card">
       <div class="stitle">Últimos movimientos</div>
@@ -764,7 +765,7 @@ function tab(id,el){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('p-'+id).classList.add('active');
-  if(id==='balance'){renderGastos();renderIngresos();}
+  if(id==='balance'){renderGastos();renderIngresos();const cr=document.getElementById('card-recalcular');if(cr)cr.style.display=isAdmin?'block':'none';}
   if(id==='participantes'){renderParticipantes();updSelects();}
   if(id==='compras'){renderListas();}
   if(id==='ropa'){
@@ -1356,8 +1357,6 @@ function balTab(t){
 function renderResumen(){
   const balRes=document.getElementById('bal-resumen');
   if(!balRes||balRes.style.display==='none')return;
-  const cardRec=document.getElementById('card-recalcular');
-  if(cardRec) cardRec.style.display=isAdmin?'block':'none';
   const tI=S.ingresos.reduce((a,g)=>a+g.importe,0);
   const tG=S.gastos.reduce((a,g)=>a+g.importe,0);
   const sal=tI-tG;
