@@ -921,10 +921,11 @@ function editarListaPagada(){
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
 }
 
-// Sincroniza el gasto vinculado con el total real de los artículos
+// Sincroniza el gasto vinculado con el importe real de la lista
 function syncGastoLista(lst){
   if(!lst||!lst.pagadaPor||!lst.gastoId) return;
-  const nuevoTotal=lst.items.reduce((a,i)=>a+(i.precio||0),0);
+  // Recalculate from items (only called after editing items, so items are source of truth)
+  const nuevoTotal=parseFloat(lst.items.reduce((a,i)=>a+(i.precio||0),0).toFixed(2));
   lst.importe=nuevoTotal;
   const g=S.gastos.find(g=>g.id===lst.gastoId);
   if(g){g.importe=nuevoTotal;g.concepto=lst.nombre;}
@@ -1547,7 +1548,12 @@ function pagarLista(){
   }
   const importe=parseFloat(document.getElementById('l-importe').value)||lst.items.reduce((a,i)=>a+(i.precio||0),0);
   if(!pagNom||importe<=0){alert('Indica el importe total antes de marcar como pagada.');return;}
-  if(lst.gastoId)S.gastos=S.gastos.filter(g=>g.id!==lst.gastoId);
+  // Remove ANY existing auto compra gasto linked to this list (by gastoId or by matching concepto+auto)
+  S.gastos=S.gastos.filter(g=>{
+    if(lst.gastoId&&g.id===lst.gastoId) return false;
+    if(g.auto&&g.categoria==='compra'&&g.concepto===lst.nombre) return false;
+    return true;
+  });
   const gastoId=Date.now();
   lst.pagadaPor=pagNom;lst.importe=importe;lst.gastoId=gastoId;lst.fechaPago=hoy();
   S.gastos.push({id:gastoId,auto:true,concepto:''+lst.nombre,importe,pagadorNombre:pagNom,categoria:'compra',fecha:hoy(),createdBy:currentUser});
@@ -1722,7 +1728,7 @@ function renderListaActiva(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-        <button class="btn btn-sm" onclick="toggleEdicionItem(${it.id})" style="border-color:rgba(255,107,53,.25);color:var(--ora-dd);font-size:11px;padding:5px 9px" ${lst.pagadaPor&&!isAdmin?'style="display:none"':''}>✏️ Editar</button>
+        <button class="btn btn-sm" onclick="toggleEdicionItem(${it.id})" style="border-color:rgba(255,107,53,.25);color:var(--ora-dd);font-size:11px;padding:5px 9px;${lst.pagadaPor&&!isAdmin?'display:none':''}">✏️ Editar</button>
         ${(!lst.pagadaPor&&canDelete(it.createdBy))||isAdmin?`<button class="btn btn-sm btn-d" onclick="delItem(${lst.id},${it.id})">✕</button>`:''}
       </div>
     </div>`;
@@ -1952,6 +1958,19 @@ function initFirebase(){
       S.listas=data.listas||[];
       S.eventos=data.eventos||[];
       S._ts=data._ts||null;
+      // Clean up duplicate compra gastos — keep only the one matching lst.gastoId
+      const validGastoIds=new Set((S.listas||[]).filter(l=>l.gastoId).map(l=>l.gastoId));
+      const seen=new Set();
+      S.gastos=S.gastos.filter(g=>{
+        if(!g.auto||g.categoria!=='compra') return true;
+        // If it has a valid gastoId reference, keep it
+        if(validGastoIds.has(g.id)) return true;
+        // Otherwise it's an orphan duplicate — remove
+        const key=g.concepto+'|'+g.pagadorNombre;
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       // Re-render active tab
       const active=document.querySelector('.nav-btn.active');
       const id=active?active.querySelector('span')?.textContent?.toLowerCase():'';
