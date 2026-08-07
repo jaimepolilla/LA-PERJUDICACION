@@ -574,8 +574,7 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <!-- Comentario de la lista -->
     <div style="border-top:1px solid var(--borde);margin-top:14px;padding-top:14px">
       <div class="stitle">💬 Comentario de la lista</div>
-      <textarea id="l-comentario-lista" placeholder="Añade notas sobre esta lista: qué sobró, qué faltó, para el año que viene..." style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--bg);color:var(--texto);box-sizing:border-box;margin-top:8px" oninput="protegerComentario(this)"></textarea>
-      <div id="l-comentario-hint" style="font-size:11px;color:var(--texto3);margin-top:4px"></div>
+      <textarea id="l-comentario-lista" placeholder="Añade notas sobre esta lista: qué sobró, qué faltó, para el año que viene..." style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--bg);color:var(--texto);box-sizing:border-box;margin-top:8px"></textarea>
       <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
         <button class="btn btn-p btn-sm" onclick="guardarComentarioLista()">💾 Guardar comentario</button>
         <span id="l-comentario-ok" style="font-size:12px;color:#15803d;font-weight:600;display:none">✓ Guardado</span>
@@ -1658,31 +1657,10 @@ function guardarBalanceComentario(idsStr,gIdx){
   if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none';},3000);}
 }
 
-function protegerComentario(ta){
-  if(isAdmin) return; // Admin puede editar libremente
-  const pLen=parseInt(ta.dataset.protectedLen)||0;
-  if(!pLen) return; // No hay texto protegido
-  // Si el texto actual es más corto que el protegido, restaurar
-  if(ta.value.length < pLen || ta.value.substring(0,pLen) !== ta.dataset.protectedText){
-    // Restaurar el texto protegido + lo que el usuario haya añadido después
-    const added = ta.value.length > pLen ? ta.value.substring(pLen) : '';
-    ta.value = ta.dataset.protectedText + added;
-    // Mantener cursor al final
-    ta.selectionStart = ta.selectionEnd = ta.value.length;
-  }
-}
-
 function guardarComentarioLista(){
   const lst=S.listas.find(l=>l.id===S.listaActiva);if(!lst)return;
   const ta=document.getElementById('l-comentario-lista');if(!ta)return;
   lst.comentarioLista=ta.value;
-  // Update protection for this session
-  if(!isAdmin){
-    ta.dataset.protectedLen=ta.value.length;
-    ta.dataset.protectedText=ta.value;
-  }
-  const hint=document.getElementById('l-comentario-hint');
-  if(hint&&!isAdmin) hint.textContent=ta.value.length>0?'Puedes añadir texto al final, pero no borrar lo que ya está escrito':'';
   saveToFirebase();
   const ok=document.getElementById('l-comentario-ok');
   if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none';},3000);}
@@ -1802,15 +1780,7 @@ function renderListaActiva(){
   renderTickets(lst.fotos||(lst.ticket?[lst.ticket]:[]));
   // Populate comment
   const taComentario=document.getElementById('l-comentario-lista');
-  if(taComentario){
-    const textoExistente=lst.comentarioLista||'';
-    taComentario.value=textoExistente;
-    taComentario.dataset.protectedLen=isAdmin?0:textoExistente.length;
-    taComentario.dataset.protectedText=isAdmin?'':textoExistente;
-    if(!isAdmin && textoExistente) setTimeout(()=>{taComentario.selectionStart=taComentario.selectionEnd=taComentario.value.length;},50);
-    const hint=document.getElementById('l-comentario-hint');
-    if(hint) hint.textContent=(!isAdmin&&textoExistente)?'Puedes añadir texto al final, pero no borrar lo que ya está escrito':'';
-  }
+  if(taComentario) taComentario.value=lst.comentarioLista||'';
 }
 
 // ── TICKET ───────────────────────────────────────────────────
@@ -1843,10 +1813,7 @@ function abrirSelectorFoto(){
           lst.ticket=null;
           renderTickets(lst.fotos);
           statusEl.textContent='Foto guardada ✓';
-          // Block onSnapshot from overwriting while saving large base64 data
-          isRemoteUpdate=true;
           saveToFirebase();
-          setTimeout(()=>{isRemoteUpdate=false;},5000);
           setTimeout(()=>{statusEl.textContent='';},2000);
         }
         document.body.removeChild(input);
@@ -2000,6 +1967,32 @@ document.addEventListener('click',e=>{
 const firebaseConfig={apiKey:"AIzaSyBkZcLoNXeQbqljlvg1mOWAxB4MaJ11c_o",authDomain:"la-perjudicacion.firebaseapp.com",projectId:"la-perjudicacion",storageBucket:"la-perjudicacion.firebasestorage.app",messagingSenderId:"108138964249",appId:"1:108138964249:web:c95c434607b0a4ad9b1188"};
 let db=null;let syncTimeout=null;let isRemoteUpdate=false;
 
+function limpiarParticipantesVencidos(){
+  // Reglas: San Isidro → borra tras mayo (mes 5)
+  //         San Esteban → borra tras agosto (mes 8)
+  //         Octubre     → borra tras octubre (mes 10)
+  const ahora = new Date();
+  const mes = ahora.getMonth() + 1; // 1-12
+  const anio = ahora.getFullYear();
+
+  const reglas = [
+    { evento:'San Isidro',  borrarDesdesMes: 6  }, // a partir de junio
+    { evento:'San Esteban', borrarDesdesMes: 9  }, // a partir de septiembre
+    { evento:'Octubre',     borrarDesdesMes: 11 }, // a partir de noviembre
+  ];
+
+  let dirty = false;
+  reglas.forEach(r => {
+    if(mes >= r.borrarDesdesMes){
+      const antes = S.participantes.length;
+      S.participantes = S.participantes.filter(p => p.evento !== r.evento);
+      if(S.participantes.length < antes) dirty = true;
+    }
+  });
+
+  return dirty;
+}
+
 function initFirebase(){
   try{
     firebase.initializeApp(firebaseConfig);
@@ -2015,10 +2008,13 @@ function initFirebase(){
       S.eventos=data.eventos||[];
       S._ts=data._ts||null;
 
+      // Limpiar participantes de fiestas vencidas y gastos duplicados
+      let dirty=false;
+      if(limpiarParticipantesVencidos()) dirty=true;
+
       // Limpiar gastos duplicados y sincronizar importes
       const gastoIdValidos=new Set(S.listas.filter(l=>l.gastoId).map(l=>l.gastoId));
       S.gastos=S.gastos.filter(g=>!(g.auto&&g.categoria==='compra')||gastoIdValidos.has(g.id));
-      let dirty=false;
       S.listas.forEach(lst=>{
         if(!lst.pagadaPor)return;
         const suma=parseFloat(lst.items.reduce((a,i)=>a+(i.precio||0),0).toFixed(2));
