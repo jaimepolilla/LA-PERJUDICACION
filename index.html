@@ -574,8 +574,8 @@ input[type=checkbox]{accent-color:var(--ora);width:17px;height:17px;cursor:point
     <!-- Comentario de la lista -->
     <div style="border-top:1px solid var(--borde);margin-top:14px;padding-top:14px">
       <div class="stitle">💬 Comentario de la lista</div>
-      <textarea id="l-comentario-lista" placeholder="Añade notas sobre esta lista: qué sobró, qué faltó, para el año que viene..." style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--bg);color:var(--texto);box-sizing:border-box;margin-top:8px" onkeydown="protegerComentario(event,this)" onpaste="protegerPegado(event,this)"></textarea>
-      <div style="font-size:11px;color:var(--texto3);margin-top:4px" id="l-comentario-hint"></div>
+      <textarea id="l-comentario-lista" placeholder="Añade notas sobre esta lista: qué sobró, qué faltó, para el año que viene..." style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--borde);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--bg);color:var(--texto);box-sizing:border-box;margin-top:8px" oninput="protegerComentario(this)"></textarea>
+      <div id="l-comentario-hint" style="font-size:11px;color:var(--texto3);margin-top:4px"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
         <button class="btn btn-p btn-sm" onclick="guardarComentarioLista()">💾 Guardar comentario</button>
         <span id="l-comentario-ok" style="font-size:12px;color:#15803d;font-weight:600;display:none">✓ Guardado</span>
@@ -1658,43 +1658,29 @@ function guardarBalanceComentario(idsStr,gIdx){
   if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none';},3000);}
 }
 
-function protegerComentario(e, ta){
-  if(isAdmin) return; // Admin can do anything
+function protegerComentario(ta){
+  if(isAdmin) return; // Admin puede editar libremente
   const pLen=parseInt(ta.dataset.protectedLen)||0;
-  if(!pLen) return; // No existing text to protect
-  const start=ta.selectionStart;
-  const end=ta.selectionEnd;
-  // Block: Backspace/Delete that would affect protected area
-  if((e.key==='Backspace'&&start<=pLen&&start===end)||(e.key==='Backspace'&&start<pLen)||
-     (e.key==='Delete'&&start<pLen&&start===end)||(e.key==='Delete'&&start<pLen)){
-    e.preventDefault(); return;
+  if(!pLen) return; // No hay texto protegido
+  // Si el texto actual es más corto que el protegido, restaurar
+  if(ta.value.length < pLen || ta.value.substring(0,pLen) !== ta.dataset.protectedText){
+    // Restaurar el texto protegido + lo que el usuario haya añadido después
+    const added = ta.value.length > pLen ? ta.value.substring(pLen) : '';
+    ta.value = ta.dataset.protectedText + added;
+    // Mantener cursor al final
+    ta.selectionStart = ta.selectionEnd = ta.value.length;
   }
-  // Block: any selection that spans protected area being replaced by typing
-  if(start<pLen && end>start && e.key.length===1){
-    e.preventDefault(); return;
-  }
-  // Block: Cut
-  if((e.ctrlKey||e.metaKey) && e.key==='x'){
-    if(start<pLen){ e.preventDefault(); return; }
-  }
-  // Block: moving selection into protected area via keyboard shortcuts that select backwards
-}
-
-function protegerPegado(e, ta){
-  if(isAdmin) return;
-  const pLen=parseInt(ta.dataset.protectedLen)||0;
-  if(!pLen) return;
-  const start=ta.selectionStart;
-  // Block paste if cursor is in protected area
-  if(start<pLen){ e.preventDefault(); }
 }
 
 function guardarComentarioLista(){
   const lst=S.listas.find(l=>l.id===S.listaActiva);if(!lst)return;
   const ta=document.getElementById('l-comentario-lista');if(!ta)return;
   lst.comentarioLista=ta.value;
-  // Update protected length for this session
-  ta.dataset.protectedLen=isAdmin?0:ta.value.length;
+  // Update protection for this session
+  if(!isAdmin){
+    ta.dataset.protectedLen=ta.value.length;
+    ta.dataset.protectedText=ta.value;
+  }
   const hint=document.getElementById('l-comentario-hint');
   if(hint&&!isAdmin) hint.textContent=ta.value.length>0?'Puedes añadir texto al final, pero no borrar lo que ya está escrito':'';
   saveToFirebase();
@@ -1817,15 +1803,13 @@ function renderListaActiva(){
   // Populate comment
   const taComentario=document.getElementById('l-comentario-lista');
   if(taComentario){
-    taComentario.value=lst.comentarioLista||'';
-    // Store the protected length (non-admin cannot delete existing text)
-    taComentario.dataset.protectedLen=isAdmin?0:(lst.comentarioLista||'').length;
-    // If there's existing text and not admin, place cursor at end
-    if(!isAdmin && lst.comentarioLista){
-      setTimeout(()=>{taComentario.selectionStart=taComentario.selectionEnd=taComentario.value.length;},50);
-    }
+    const textoExistente=lst.comentarioLista||'';
+    taComentario.value=textoExistente;
+    taComentario.dataset.protectedLen=isAdmin?0:textoExistente.length;
+    taComentario.dataset.protectedText=isAdmin?'':textoExistente;
+    if(!isAdmin && textoExistente) setTimeout(()=>{taComentario.selectionStart=taComentario.selectionEnd=taComentario.value.length;},50);
     const hint=document.getElementById('l-comentario-hint');
-    if(hint) hint.textContent=isAdmin?'':((lst.comentarioLista||'').length>0?'Puedes añadir texto al final, pero no borrar lo que ya está escrito':'');
+    if(hint) hint.textContent=(!isAdmin&&textoExistente)?'Puedes añadir texto al final, pero no borrar lo que ya está escrito':'';
   }
 }
 
@@ -1859,7 +1843,10 @@ function abrirSelectorFoto(){
           lst.ticket=null;
           renderTickets(lst.fotos);
           statusEl.textContent='Foto guardada ✓';
+          // Block onSnapshot from overwriting while saving large base64 data
+          isRemoteUpdate=true;
           saveToFirebase();
+          setTimeout(()=>{isRemoteUpdate=false;},5000);
           setTimeout(()=>{statusEl.textContent='';},2000);
         }
         document.body.removeChild(input);
