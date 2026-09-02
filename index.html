@@ -765,7 +765,7 @@ function tab(id,el){
   el.classList.add('active');
   document.getElementById('p-'+id).classList.add('active');
   if(id==='balance'){renderGastos();renderIngresos();}
-  if(id==='participantes'){renderParticipantes();updSelects();}
+  if(id==='participantes'){autoPurgeParticipantes();renderParticipantes();updSelects();}
   if(id==='compras'){renderListas();}
   if(id==='ropa'){
     if(db){db.collection('perjudicacion').doc('tallas').get().then(d=>{tallasData=d.exists?d.data():{};renderRopa();});}
@@ -1007,6 +1007,8 @@ function doLogin(){
 function _finalizarLogin(n){
   currentUser=n;
   localStorage.setItem('usuario',n);
+  // Purga automática de participantes de fiestas pasadas al entrar
+  if(S.participantes.length) autoPurgeParticipantes();
   const tallasGrid=document.getElementById('login-tallas-grid');
   if(!isAdmin && tallasGrid && tallasGrid.style.display!=='none'){
     const tallas={
@@ -1592,6 +1594,7 @@ function renderListas(){
   const card=document.getElementById('lst-activa-card');
   if(!S.listas.length){pills.innerHTML='<div class="empty" style="font-size:13px">Sin listas de compra</div>';card.style.display='none';return;}
 
+  // Group by fiesta+año
   const grupos={};
   S.listas.forEach(l=>{
     const key=(l.fiesta&&l.anio)?l.fiesta+' '+l.anio:(l.fiesta||l.anio||'Sin asignar');
@@ -1605,73 +1608,37 @@ function renderListas(){
     return orden.indexOf(ga.fiesta)-orden.indexOf(gb.fiesta);
   });
 
-  const activeGroup=sortedKeys.find(k=>grupos[k].listas.some(l=>l.id===S.listaActiva))||sortedKeys[0];
-
   pills.innerHTML=sortedKeys.map((key,gIdx)=>{
     const g=grupos[key];
     const allPaid=g.listas.every(l=>l.pagadaPor);
     const somePaid=g.listas.some(l=>l.pagadaPor);
-    const totalGasto=g.listas.reduce((a,l)=>a+(l.importe||l.items.reduce((b,i)=>b+(i.precio||0),0)),0);
-    const isOpen=key===activeGroup;
     const groupComment=g.listas.find(l=>l.balanceComentario)?.balanceComentario||'';
     const ids=g.listas.map(l=>l.id).join(',');
-
-    const estadoBadge=allPaid
-      ?'<span style="font-size:10px;font-weight:700;padding:2px 8px;background:#dcfce7;color:#15803d;border-radius:20px;border:1px solid #16a34a">Todo pagado</span>'
-      :somePaid
-      ?'<span style="font-size:10px;font-weight:700;padding:2px 8px;background:#fef9c3;color:#854d0e;border-radius:20px;border:1px solid #ca8a04">Parcialmente</span>'
-      :'';
-
-    const listasHtml=g.listas.map(l=>{
+    const pillsHtml=g.listas.map(l=>{
       const paid=l.pagadaPor;
       const active=l.id===S.listaActiva;
-      const totalL=paid?(l.importe||0):l.items.reduce((a,i)=>a+(i.precio||0),0);
-      const del=canDelete(l.createdBy)?`<span onclick="delLista(${l.id},event)" style="font-size:16px;color:var(--mal);cursor:pointer;padding:4px">X</span>`:'';
-      return '<div onclick="selLista('+l.id+')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--rs);cursor:pointer;margin-bottom:4px;border:2px solid '+(active?'var(--ora)':paid?'#16a34a':'var(--borde)')+';background:'+(active?'var(--ora-l)':paid?'#f0fdf4':'var(--bg)')+';transition:all .15s">'
-        +'<div style="display:flex;align-items:center;gap:8px;min-width:0">'
-        +'<span style="font-size:16px">'+(paid?'✅':'🛒')+'</span>'
-        +'<div style="min-width:0">'
-        +'<div style="font-size:13px;font-weight:600;color:'+(active?'var(--ora-dd)':paid?'#15803d':'var(--texto)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">'+l.nombre+'</div>'
-        +(paid?'<div style="font-size:11px;color:#16a34a">Pagado por '+l.pagadaPor+'</div>':'<div style="font-size:11px;color:var(--texto3)">'+l.items.length+' artículo'+(l.items.length!==1?'s':'')+'</div>')
-        +'</div></div>'
-        +'<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
-        +(totalL>0?'<span style="font-size:13px;font-weight:700;color:'+(paid?'#15803d':'var(--ora-dd)')+'">'+fmt(totalL)+'</span>':'')
-        +del+'</div></div>';
+      const st=paid?'background:#dcfce7;border:2px solid #16a34a;color:#15803d;font-weight:700;':'';
+      const lbl=(paid?'\u2713 ':'')+l.nombre;
+      const del=canDelete(l.createdBy)?' <span onclick="delLista('+l.id+',event)" style="opacity:.5;margin-left:3px">\u2715</span>':'';
+      return '<button class="pill'+(active?' active':'')+'" onclick="selLista('+l.id+')" style="'+st+'">'+lbl+del+'</button>';
     }).join('');
-
-    const balBtn=(somePaid||allPaid)?'<button class="btn btn-sm" onclick="event.stopPropagation();toggleBalanceComentario('+gIdx+')" style="font-size:11px;color:var(--ora-dd);border-color:rgba(255,107,53,.25)">Balance</button>':'';
+    const balBtn=(somePaid||allPaid)?'<button class="btn btn-sm" onclick="toggleBalanceComentario('+gIdx+')" style="font-size:11px;color:var(--ora-dd);border-color:rgba(255,107,53,.25)">📝 Balance</button>':'';
+    const titulo=(allPaid?'\u2713 ':'')+key+(allPaid?' \u2014 Todo pagado':somePaid?' \u2014 Parcialmente pagado':'');
     const balArea='<div id="balance-area-'+gIdx+'" style="display:'+(groupComment?'block':'none')+';margin-top:8px">'
-      +'<textarea id="balance-txt-'+gIdx+'" placeholder="Balance: que sobro, que falto, notas..." style="width:100%;min-height:70px;padding:10px 12px;border:1.5px solid var(--ora-m);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--ora-l);color:var(--texto);box-sizing:border-box">'+groupComment+'</textarea>'
+      +'<textarea id="balance-txt-'+gIdx+'" placeholder="Balance: qué sobró, qué faltó, notas..." style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--ora-m);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;outline:none;background:var(--ora-l);color:var(--texto);box-sizing:border-box">'+groupComment+'</textarea>'
       +'<div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
-      +'<button class="btn btn-p btn-sm" onclick="guardarBalanceComentario(\''+ids+'\','+gIdx+')">Guardar balance</button>'
-      +'<span id="balance-ok-'+gIdx+'" style="font-size:12px;color:#15803d;font-weight:600;display:none">Guardado</span>'
+      +'<button class="btn btn-p btn-sm" onclick="guardarBalanceComentario(\''+ids+'\','+gIdx+')">💾 Guardar balance</button>'
+      +'<span id="balance-ok-'+gIdx+'" style="font-size:12px;color:#15803d;font-weight:600;display:none">✓ Guardado</span>'
       +'</div></div>';
-
-    return '<div style="margin-bottom:10px;border:1.5px solid var(--borde);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)">'
-      +'<div onclick="toggleGrupoCompras(\'grupo-'+gIdx+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg2);cursor:pointer;user-select:none;gap:8px">'
-      +'<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">'
-      +'<span style="font-size:16px">'+(allPaid?'✅':'🛍️')+'</span>'
-      +'<div><div style="font-size:14px;font-weight:700;color:var(--texto)">'+key+'</div>'
-      +'<div style="font-size:11px;color:var(--texto3)">'+g.listas.length+' lista'+(g.listas.length!==1?'s':'')+(totalGasto>0?' · '+fmt(totalGasto):'')+'</div></div>'
-      +estadoBadge+'</div>'
-      +'<div style="display:flex;align-items:center;gap:6px">'+balBtn
-      +'<span id="chevron-'+gIdx+'" style="font-size:18px;color:var(--texto3);transition:transform .2s;display:inline-block;transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">›</span>'
-      +'</div></div>'
-      +'<div id="grupo-'+gIdx+'" style="display:'+(isOpen?'block':'none')+';padding:10px 12px">'
-      +listasHtml+balArea+'</div></div>';
+    return '<div style="margin-bottom:12px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--texto3);text-transform:uppercase;letter-spacing:.06em">'+titulo+'</div>'
+      +balBtn+'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+pillsHtml+'</div>'
+      +balArea+'</div>';
   }).join('');
 
   renderListaActiva();
-}
-
-function toggleGrupoCompras(id){
-  const el=document.getElementById(id);
-  if(!el) return;
-  const isOpen=el.style.display!=='none';
-  el.style.display=isOpen?'none':'block';
-  const idx=id.replace('grupo-','');
-  const chev=document.getElementById('chevron-'+idx);
-  if(chev) chev.style.transform=isOpen?'rotate(0deg)':'rotate(90deg)';
 }
 
 function toggleBalanceComentario(gIdx){
@@ -2016,6 +1983,9 @@ function initFirebase(){
       S.listas=data.listas||[];
       S.eventos=data.eventos||[];
       S._ts=data._ts||null;
+
+      // Purga automática de participantes de fiestas pasadas
+      autoPurgeParticipantes();
 
       // Limpiar gastos duplicados y sincronizar importes
       const gastoIdValidos=new Set(S.listas.filter(l=>l.gastoId).map(l=>l.gastoId));
@@ -2382,16 +2352,21 @@ function autoPurgeParticipantes(){
   const now = new Date();
   const mes = now.getMonth() + 1; // 1-12
   const eventosPurge = [];
-  if(mes > 5)  eventosPurge.push('San Isidro');
-  if(mes > 8)  eventosPurge.push('San Esteban');
-  if(mes > 10) eventosPurge.push('Octubre');
-  if(!eventosPurge.length) return;
-  const antes = S.participantes.length;
-  S.participantes = S.participantes.filter(p => !eventosPurge.includes(p.evento));
-  // Also remove auto ingresos linked to purged participants
-  const idsRestantes = new Set(S.participantes.map(p=>p.id));
-  S.ingresos = S.ingresos.filter(i => !i.auto || idsRestantes.has(i.id));
-  if(S.participantes.length < antes) saveToFirebase();
+  if(mes > 5)  eventosPurge.push('San Isidro');   // a partir de junio
+  if(mes > 8)  eventosPurge.push('San Esteban');  // a partir de septiembre
+  if(mes > 10) eventosPurge.push('Octubre');       // a partir de noviembre
+  if(!eventosPurge.length) return false;
+  const idsPurgados = new Set(
+    S.participantes.filter(p=>eventosPurge.includes(p.evento)).map(p=>p.id)
+  );
+  if(!idsPurgados.size) return false;
+  // Borrar participantes de fiestas pasadas
+  S.participantes = S.participantes.filter(p=>!eventosPurge.includes(p.evento));
+  // Borrar ingresos auto vinculados a esos participantes
+  S.ingresos = S.ingresos.filter(i=>!i.auto||!idsPurgados.has(i.origenId));
+  // Guardar en Firebase
+  saveToFirebase();
+  return true;
 }
 
 
